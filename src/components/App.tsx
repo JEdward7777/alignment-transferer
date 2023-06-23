@@ -21,7 +21,7 @@ const App: React.FC = () => {
       <header className="py-4 bg-gray-200">
         <nav className="container mx-auto">
           <ul className="flex space-x-4">
-            <FileMenu />
+            <FileMenu onAddResource={loadUsfmCallback} />
             <AboutMenu />
           </ul>
         </nav>

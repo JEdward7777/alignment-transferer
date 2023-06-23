@@ -1,17 +1,24 @@
 // FileMenu.tsx
 import React from 'react';
+import { loadFilesFromInputOnChange } from '../utils/load_file';
 
-const FileMenu: React.FC = () => {
+interface FileMenuProps {
+  onAddResource: (filename: string, fileContent: string) => void;
+}
+
+const FileMenu: React.FC<FileMenuProps> = ({onAddResource}) => {
+  console.log( `onAddResource is ${onAddResource}` );
   return (
     <li className="relative group">
       <a href="#" className="text-gray-700 hover:text-black">
         File
       </a>
-      <ul className="absolute hidden group-hover:block bg-white py-2 ml-0.5">
+      <ul className="absolute hidden group-hover:block bg-white py-2 ml-0.5 w-40">
         <li>
-          <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-            Open
-          </a>
+            <label htmlFor="file-input" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
+               Add Resource
+            <input type="file" onChange={loadFilesFromInputOnChange(onAddResource)} accept=".usfm" className="hidden" id="file-input" multiple />
+          </label>
         </li>
         <li>
           <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
