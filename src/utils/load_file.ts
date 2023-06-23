@@ -1,6 +1,6 @@
-export function loadFilesFromInputOnChange( callback: (filename: String, contents: string) => void ): ((event: React.ChangeEvent<HTMLInputElement>) => void) {
+export function loadFilesFromInputOnChange( callback: (filename: string, contents: string) => void ): ((event: React.ChangeEvent<HTMLInputElement>) => void) {
 
-    const _handleFileReadFor = (filename: String ): ((event: ProgressEvent<FileReader>) => void) => {
+    const _handleFileReadFor = (filename: string ): ((event: ProgressEvent<FileReader>) => void) => {
         const _handleFileRead = (event: ProgressEvent<FileReader>) => {
             const fileContent = event.target?.result as string; // Retrieve the text content of the file
             callback(filename,fileContent); // Perform any further processing or store the content as needed

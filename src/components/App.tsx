@@ -8,7 +8,13 @@ import Toolbar from './Toolbar';
 const App: React.FC = () => {
   //const listItems = ['Item 1', 'Item 2', 'Item 3', 'a', 'b', 'c', 'e', 'j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k'];
   //const listItems = ['Item 1', 'Item 2', 'Item 3', 'a', 'b', 'c', 'e', 'j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k'];
-  const listItems = []
+  const listItems : string[] = []
+
+
+  const loadUsfmCallback = ( filename: string, fileContent: string ) => {
+    console.log( `in app callback filename is ${filename}` );
+    console.log( fileContent );
+  };
 
   return (
     <div className="h-screen flex flex-col py-4">
@@ -26,7 +32,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="py-4 bg-gray-200">
-        <Toolbar />
+        <Toolbar onAddResource={loadUsfmCallback}/>
       </footer>
     </div>
   );
