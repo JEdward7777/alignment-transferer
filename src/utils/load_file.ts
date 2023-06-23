@@ -1,4 +1,4 @@
-export function handleFileChange( callback: (filename: String, contents: string) => void ): ((event: React.ChangeEvent<HTMLInputElement>) => void) {
+export function loadFilesFromInputOnChange( callback: (filename: String, contents: string) => void ): ((event: React.ChangeEvent<HTMLInputElement>) => void) {
 
     const _handleFileReadFor = (filename: String ): ((event: ProgressEvent<FileReader>) => void) => {
         const _handleFileRead = (event: ProgressEvent<FileReader>) => {
