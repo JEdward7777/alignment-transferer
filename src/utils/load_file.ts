@@ -11,6 +11,8 @@ export function handleFileChange( callback: (arg: string) => void ): (event: Rea
             reader.onload = _handleFileRead;
             reader.readAsText(file); // Read the file as text
         }
+        // Clear the input field
+        event.target.value = '';
     };
 
     return _handleFileChange;
