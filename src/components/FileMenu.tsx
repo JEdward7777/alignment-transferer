@@ -1,9 +1,9 @@
 // FileMenu.tsx
 import React from 'react';
-import { loadFilesFromInputOnChange } from '../utils/load_file';
+import { loadFilesFromInputOnChangeTogether } from '../utils/load_file';
 
 interface FileMenuProps {
-  onAddResource: (filename: string, fileContent: string) => void;
+  onAddResource: (contents: { [key: string]: string } ) => void;
 }
 
 const FileMenu: React.FC<FileMenuProps> = ({onAddResource}) => {
@@ -17,7 +17,7 @@ const FileMenu: React.FC<FileMenuProps> = ({onAddResource}) => {
         <li>
             <label htmlFor="file-input" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
                Add Resource
-            <input type="file" onChange={loadFilesFromInputOnChange(onAddResource)} accept=".usfm" className="hidden" id="file-input" multiple />
+            <input type="file" onChange={loadFilesFromInputOnChangeTogether(onAddResource)} accept=".usfm" className="hidden" id="file-input" multiple />
           </label>
         </li>
         <li>
