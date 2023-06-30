@@ -21,6 +21,8 @@ interface TableProps {
 export default function List({ data }: TableProps) {
   const rerender = React.useReducer(() => ({}), {})[1]
 
+  const [sorting, setSorting] = React.useState<SortingState>([])
+
   const columns = React.useMemo<ColumnDef<DataObject>[]>(
     () => [
       {
@@ -36,23 +38,46 @@ export default function List({ data }: TableProps) {
   const table = useReactTable({
     data,
     columns,
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   
   return (
     <div className="p-2">
       <table>
-        <thead>
+      <thead>
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender( header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
+              {headerGroup.headers.map(header => {
+                return (
+                  <th key={header.id} colSpan={header.colSpan}>
+                    {header.isPlaceholder ? null : (
+                      <div
+                        {...{
+                          className: header.column.getCanSort()
+                            ? 'cursor-pointer select-none'
+                            : '',
+                          onClick: header.column.getToggleSortingHandler(),
+                        }}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: <FaSortUp className="inline-block ml-1" />,
+                          desc: <FaSortDown className="inline-block ml-1" />,
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    )}
+                  </th>
+                )
+              })}
             </tr>
           ))}
         </thead>
