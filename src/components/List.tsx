@@ -1,23 +1,46 @@
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useState, useEffect} from 'react';
 import 'react-data-grid/lib/styles.css';
 import DataGrid from 'react-data-grid';
 import type { Column, SortColumn } from 'react-data-grid';
 
 
 interface DataObject {
-  group: string;
-  toc3: string;
+  group_name: string;
+  book_name: string;
 }
 
 interface TableProps {
-  data: DataObject[];
-}
+  resources: {
+    [key: string]: {
+      [key: string]: any;
+    };
+  };
+};
 
 
-export default function List({ data }: TableProps) {
+export default function List({ resources }: TableProps) {
+
+  //need to slice and dice the resources so that it looks like we want it in the table.
+  const [data, setData] = useState<DataObject[]>([]);
+
+  useEffect(() => {
+    const newData: DataObject[] = [];
+
+    for( const group_name in resources ) if ( resources.hasOwnProperty(group_name) ){
+      const group = resources[group_name];
+      for( const book_name in group ) if ( group.hasOwnProperty( book_name ) ){
+        const book = group[book_name];
+        newData.push( { group_name, book_name });
+      }
+    }
+
+    setData(newData);
+  },[resources]);
+
+
   const columns = [
-    { key: 'group', name: 'Group' },
-    { key: 'toc3', name: 'Name' },
+    { key: 'group_name', name: 'Group' },
+    { key: 'book_name', name: 'Book' },
   ];
 
   //have a state for the sortedness of the container
@@ -51,5 +74,6 @@ export default function List({ data }: TableProps) {
     defaultColumnOptions={{
       sortable: true,
     }}
+    
     />;
 }
