@@ -49,13 +49,13 @@ export default function List({ data }: TableProps) {
   
   return (
     <div className="p-2">
-      <table>
+      <table className="table-fixed">
       <thead>
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {
                 return (
-                  <th key={header.id} colSpan={header.colSpan}>
+                  <th key={header.id} colSpan={header.colSpan} className="w-1/4">
                     {header.isPlaceholder ? null : (
                       <div
                         {...{
@@ -85,7 +85,7 @@ export default function List({ data }: TableProps) {
           {table.getRowModel().rows.map(row => (
             <tr key={row.id}>
               {row.getVisibleCells().map(cell => (
-                <td key={cell.id}>
+                <td key={cell.id} className="border px-4 py-2">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
