@@ -1,7 +1,13 @@
 import React from 'react';
-import { useTable, useSortBy, useFilters, useRowSelect, Column } from 'react-table';
 import { FaSortUp, FaSortDown } from 'react-icons/fa';
-import 'tailwindcss/tailwind.css';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+} from '@tanstack/react-table'
 
 interface DataObject {
   group: string;
@@ -13,92 +19,55 @@ interface TableProps {
 }
 
 export default function List({ data }: TableProps) {
-  const columns: Column<DataObject>[] = React.useMemo(
+  const rerender = React.useReducer(() => ({}), {})[1]
+
+  const columns = React.useMemo<ColumnDef<DataObject>[]>(
     () => [
       {
-        Header: 'Group',
-        accessor: 'group',
-        Filter: DefaultColumnFilter,
-        width: 300,
-      },
-      {
-        Header: 'TOC3',
-        accessor: 'toc3',
-        Filter: DefaultColumnFilter,
-        width: 150,
-      },
-    ],
-    []
-  );
+        header: 'Group',
+        accessorKey: 'group',
+      },{
+        header: 'toc3',
+        accessorKey: 'toc3',
+      }
+    ],[]
+  )
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-    // @ts-ignore
-    selectedFlatRows, 
-  } = useTable<DataObject>(
-    {
-      columns,
-      data,
-    },
-    useFilters,
-    useSortBy,
-    useRowSelect
-  );
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
+  
   return (
-    <table {...getTableProps()} className="table">
-      <thead>
-        {headerGroups.map((headerGroup) => (
-          <tr {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map((column) => (
-              <th
-                {...column.getHeaderProps(column.getSortByToggleProps())}
-                className="cursor-pointer"
-              >
-                {column.render('Header')}
-                {column.isSorted ? (
-                  column.isSortedDesc ? (
-                    <FaSortDown className="inline-block ml-1" />
-                  ) : (
-                    <FaSortUp className="inline-block ml-1" />
-                  )
-                ) : null}
-              </th>
-            ))}
-          </tr>
-        ))}
-      </thead>
-      <tbody {...getTableBodyProps()}>
-        {rows.map((row) => {
-          prepareRow(row);
-          return (
-            <tr {...row.getRowProps()}>
-              {row.cells.map((cell) => (
-                <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+    <div className="p-2">
+      <table>
+        <thead>
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <th key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender( header.column.columnDef.header, header.getContext())}
+                </th>
               ))}
             </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map(row => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map(cell => (
+                <td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
-
-// DefaultColumnFilter component for text-based filtering
-const DefaultColumnFilter = ({
-  column: { filterValue, setFilter },
-}) => {
-  return (
-    <input
-      type="text"
-      value={filterValue || ''}
-      onChange={(e) => setFilter(e.target.value)}
-      className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none"
-      placeholder="Filter..."
-    />
-  );
-};
