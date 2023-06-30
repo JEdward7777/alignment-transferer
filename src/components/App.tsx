@@ -1,5 +1,5 @@
 // App.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import FileMenu from './FileMenu';
 import AboutMenu from './AboutMenu';
 import List from './List';
@@ -8,7 +8,24 @@ import Toolbar from './Toolbar';
 // @ts-ignore
 import usfm from 'usfm-js';
 
+interface AppState {
+  resources: {
+    [key: string]: {
+      [key: string]: any;
+    };
+  };
+}
+
+
 const App: React.FC = () => {
+  const [state, setState] = useState<AppState>({ resources: {} });
+
+  const {resources} = state;
+
+  const updateResources = (newResources: any) =>{
+    setState( { ...state, resources: newResources } );
+  }
+
   //const listItems = ['Item 1', 'Item 2', 'Item 3', 'a', 'b', 'c', 'e', 'j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k'];
   //const listItems = ['Item 1', 'Item 2', 'Item 3', 'a', 'b', 'c', 'e', 'j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k'];
   const listItems : string[] = []
@@ -24,33 +41,97 @@ const App: React.FC = () => {
       }
     });
   }
+
+  /**
+ * Prompts the user for text input and resolves with the entered text.
+ * If the user cancels or closes the prompt, it rejects with a cancellation message.
+ *
+ * @param promptMessage - The message displayed to the user as a prompt.
+ * @returns A promise that resolves with the user's entered text or rejects with a cancellation message.
+ */
+  async function promptTextInput(promptMessage: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const userInput = prompt(promptMessage);
+      if (userInput === null) {
+        reject("User cancelled or closed the prompt.");
+      } else {
+        resolve(userInput);
+      }
+    });
+  }
+
+  /**
+ * Displays a message to the user and resolves when the user clicks "OK".
+ *
+ * @param message - The message to display to the user.
+ * @returns A promise that resolves when the user acknowledges the message.
+ */
+  async function showMessage(message: string): Promise<void> {
+    return new Promise((resolve) => {
+      alert(message);
+      resolve();
+    });
+  }
   
-  async function handleUserConfirmation() {
-    try {
-      const confirmed = await getUserConfirmation('Are you sure?');
-      // User confirmed, continue with the operation
-      // Access the confirmed value within the local scope
-      console.log('User confirmation:', confirmed);
-    } catch (error) {
-      // User declined, handle accordingly
-      console.error('User confirmation error:', error);
-    }
+
+  function parseUsfmHeaders( headers_section:  {tag: string, content:string}[] ){
+    const parsed_headers: { [key: string]: string } = headers_section.reduce((acc: { [key: string]: string }, entry: {tag: string, content: string}) => {
+      if (entry.tag && entry.content) {
+        return { ...acc, [entry.tag]: entry.content };
+      }
+      return acc;
+    }, {});
+    return parsed_headers;
   }
 
   
   const loadUsfmCallback = async ( contents: { [key: string]: string } ) => {
-    console.log( `in app callback contents is ${contents}` );
+    try{
+      console.log( `in app callback contents is ${contents}` );
 
-    // const usfm_json = usfm.toJSON(fileContent, { convertToInt: ['occurrence', 'occurrences'] });
+      //load the usfm.
+      const usfm_jsons = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value,  { convertToInt: ['occurrence', 'occurrences'] })]));
 
-    // try {
-    //   const confirmed = await getUserConfirmation('Are you sure?');
+      const group_name = await promptTextInput( "What group name should the resources be loaded into?" );
 
-    //   console.log( usfm_json );
-    // } catch (error) {
-    //   // User declined, handle accordingly
-    //   console.error('User confirmation error:', error);
-    // }
+      let need_confirmation = false;
+      let confirmation_message = "";
+
+      //now make sure that for each of the chapters being loaded that that chapter hasn't already been loaded.
+
+      if (group_name in resources) {
+        //the specific group exists already.
+        const existing_matching_resource = resources[group_name];
+        Object.values(usfm_jsons).forEach((value) => {
+          const parsed_headers = parseUsfmHeaders(value.headers);
+          //now see if the specific book already exists in this group
+          if (parsed_headers.h in existing_matching_resource) {
+            need_confirmation = true;
+            confirmation_message += `Do you want to reload ${parsed_headers.h} in ${group_name}?`
+          }
+        });
+      }
+
+      //now do the confirmation if needed.
+      //this will throw an exception if it doesn't pass confirmation.
+      if( need_confirmation ) await getUserConfirmation(confirmation_message  );
+
+      //poke all the newly loaded items in.
+      const new_resources = {...resources};
+      if( !(group_name in new_resources) ) new_resources[group_name] = {};
+      Object.values( usfm_jsons ).forEach((value) => {
+        const parsed_headers = parseUsfmHeaders( value.headers );
+        new_resources[group_name][parsed_headers.h] = value;
+      })
+      updateResources( new_resources );
+
+      await showMessage( "resources loaded" )
+
+    } catch( error ){
+      //user declined
+      console.log( `error importing ${error}` );
+      await showMessage( `Error ${error}`)
+    }
   };
 
   return (
