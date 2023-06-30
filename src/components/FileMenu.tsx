@@ -7,7 +7,6 @@ interface FileMenuProps {
 }
 
 const FileMenu: React.FC<FileMenuProps> = ({onAddResource}) => {
-  console.log( `onAddResource is ${onAddResource}` );
   return (
     <li className="relative group">
       <a href="#" className="text-gray-700 hover:text-black">

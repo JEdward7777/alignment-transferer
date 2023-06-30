@@ -28,7 +28,11 @@ const App: React.FC = () => {
 
   //const listItems = ['Item 1', 'Item 2', 'Item 3', 'a', 'b', 'c', 'e', 'j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k'];
   //const listItems = ['Item 1', 'Item 2', 'Item 3', 'a', 'b', 'c', 'e', 'j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'Item 3', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k', 'a', 'b', 'c', 'e', 'f', 'g','h','i','j','k'];
-  const listItems : string[] = []
+  //const listItems : string[] = []
+  const listItems = [
+    {group:"bob", toc3:"Mat"},
+    {group:"bob", toc3:"Mak"},
+  ];
 
 
   function getUserConfirmation(message: string) {
@@ -146,7 +150,7 @@ const App: React.FC = () => {
       </header>
 
       <main className="overflow-y-scroll container flex-grow mx-auto mt-8 py-4 bg-white">
-        <List items={listItems} />
+        <List data={listItems} />
       </main>
 
       <footer className="py-4 bg-gray-200">
