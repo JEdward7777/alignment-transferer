@@ -14,16 +14,21 @@ interface AppState {
       [key: string]: any;
     };
   };
+  scope: string;
 }
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({ resources: {} });
+  const [state, setState] = useState<AppState>({ resources: {}, scope: "Book" });
 
-  const {resources} = state;
+  const {resources, scope} = state;
 
   const updateResources = (newResources: any) =>{
     setState( { ...state, resources: newResources } );
+  }
+
+  const onScopeChange = (newScope: string) =>{
+    setState( { ...state, scope: newScope } );
   }
 
   function getUserConfirmation(message: string) {
@@ -141,11 +146,11 @@ const App: React.FC = () => {
       </header>
 
       <main className="overflow-y-scroll container flex-grow mx-auto mt-8 py-4 bg-white">
-        <List resources={resources} />
+        <List resources={resources} scope={scope}/>
       </main>
 
       <footer className="py-4 bg-gray-200">
-        <Toolbar onAddResource={loadUsfmCallback}/>
+        <Toolbar onAddResource={loadUsfmCallback} onScopeChange={onScopeChange}/>
       </footer>
     </div>
   );
