@@ -145,9 +145,7 @@ const App: React.FC = () => {
         </nav>
       </header>
 
-      <main className="overflow-y-scroll container flex-grow mx-auto mt-8 py-4 bg-white">
-        <List resources={resources} scope={scope}/>
-      </main>
+      <List resources={resources} scope={scope}/>
 
       <footer className="py-4 bg-gray-200">
         <Toolbar onAddResource={loadUsfmCallback} onScopeChange={onScopeChange}/>

@@ -85,24 +85,20 @@ export default function List({ resources, scope }: TableProps) {
 
   },[resources,scope]);
 
+
+  //compile the names of the columns.
   const [columns, setColumns] = useState<KeyName[]>([]);
-
   useEffect(() => {
-
     const newColumns: KeyName[] = [];
     newColumns.push( {key: 'group_name', name: 'Group'} );
-
     if( scope == "Group" ){
       newColumns.push( {key: 'num_books', name: 'Books'} );
     }else{
       newColumns.push( {key: 'book_name', name: 'Book' } );
-  
       if( scope == "Book" ){
         newColumns.push( {key: 'num_chapters', name: 'Chapters'} );
       }else{
-  
         newColumns.push( {key: 'chapter_number', name: 'Chapter' } );
-  
         if( scope == "Chapter" ){
           newColumns.push( {key: 'num_verses', name: 'Verses' } );
         }else{
@@ -113,13 +109,6 @@ export default function List({ resources, scope }: TableProps) {
     setColumns( newColumns );
   },[scope]);
   
-
-
-  // const columns = [
-  //   { key: 'group_name', name: 'Group' },
-  //   { key: 'book_name', name: 'Book' },
-  // ];
-
   //have a state for the sortedness of the container
   const [sortColumns, setSortColumns] = useState<readonly SortColumn[]>([]);
 
@@ -144,6 +133,7 @@ export default function List({ resources, scope }: TableProps) {
   }, [data, sortColumns]);
 
   return <DataGrid 
+    className="flex-grow w-full"
     columns={columns} 
     rows={sortedData} 
     sortColumns={sortColumns}
