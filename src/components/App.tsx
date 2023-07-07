@@ -16,13 +16,16 @@ interface AppState {
   };
   scope: string;
   currentSelection: string[][];
+  sourceResources: {
+    [key: string]: any;
+  };
 }
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({ resources: {}, scope: "Book", currentSelection:[] });
+  const [state, setState] = useState<AppState>({ resources: {}, scope: "Book", currentSelection:[], sourceResources:{} });
 
-  const {resources, scope, currentSelection } = state;
+  const {resources, scope, currentSelection, sourceResources } = state;
 
   const updateResources = (newResources: any) =>{
     setState( { ...state, resources: newResources } );
@@ -34,6 +37,15 @@ const App: React.FC = () => {
 
   const setCurrentSelection = (newCurrentSelection: string[][] ) =>{
     setState( { ...state, currentSelection: newCurrentSelection } );
+  }
+
+  const setSourceResources = (newSourceResources: {[key: string]: any} ) => {
+    setState( {...state, sourceResources: newSourceResources });
+  }
+
+  const stringResourceKey = (resourceKey: string[]): string => {
+    const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
+    return sanitizedKey.join('->');
   }
 
   function getUserConfirmation(message: string) {
@@ -177,51 +189,60 @@ const App: React.FC = () => {
       //it would be good to come back to this and add confirmation
       //if the pairing is changing an existing pairing.
 
-      let attached_verse_count = 0;
+
+      const newSourceResources: {[key: string]: any} = {};
+
+      let droppedVerseCount = 0;
 
       //loop down to the verse granularity and see if each verse has a place to be put.
       Object.values( usfm_jsons ).forEach( (book) => {
         const parsed_source_headers = parseUsfmHeaders( book.headers );
 
         Object.entries(book.chapters).map(([source_chapter_num, source_chapter]) => {
-          console.log("hi");
-          //console.log( chapter );
           Object.entries(source_chapter as any).map(([source_verse_num, source_verse]) => {
 
-              //ok, at this point we are at the verse level in the source language i.e. greek,
-              //and now we need to identify which verses there are in the different groups which match.
+            let verseUsed = false;
+            //ok, at this point we are at the verse level in the source language i.e. greek,
+            //and now we need to identify which verses there are in the different groups which match.
 
-              Object.entries( resources ).map(([target_group_name,target_group])=>{
-                Object.entries( target_group ).map(([target_book_name,target_book]) => {
-                  const parsed_target_headers = parseUsfmHeaders( target_book.headers );
+            Object.entries(resources).map(([target_group_name, target_group]) => {
+              Object.entries(target_group).map(([target_book_name, target_book]) => {
+                const parsed_target_headers = parseUsfmHeaders(target_book.headers);
 
-                  if( parsed_source_headers.toc3 == parsed_target_headers.toc3 ){
-                    Object.entries( target_book.chapters ).map(([target_chapter_num,target_chapter]) => {
-                      if( source_chapter_num == target_chapter_num ){
-                        Object.entries( target_chapter as any ).map(([target_verse_num,target_verse]) => {
-                          if( source_verse_num == target_verse_num ){
-                            console.log( "hi" );
+                if (parsed_source_headers.toc3 == parsed_target_headers.toc3) {
+                  Object.entries(target_book.chapters).map(([target_chapter_num, target_chapter]) => {
+                    if (source_chapter_num == target_chapter_num) {
+                      Object.entries(target_chapter as any).map(([target_verse_num, target_verse]) => {
+                        if (source_verse_num == target_verse_num) {
+                          //now check if this verse is selected.
+                          if (isResourceSelected([target_group_name, target_book_name, target_chapter_num, target_verse_num])) {
 
-                            //now check if this verse is selected.
-                            if( isResourceSelected( [target_group_name, target_book_name, target_chapter_num, target_verse_num] ) ){
+                            //we have a match.  Go ahead and add the information.
+                            const resourceString = stringResourceKey([target_group_name, target_book_name, target_chapter_num, target_verse_num]);
+                            newSourceResources[resourceString] = source_verse;
 
-                              //we have a match.  Go ahead and add the information.
-                              attached_verse_count++;
-                            }
+                            verseUsed = true;
                           }
-                        });
-                      }
-                    });
-                  }
-                });
+                        }
+                      });
+                    }
+                  });
+                }
               });
+            });
+
+            if( !verseUsed ) droppedVerseCount++;
           });
         });
       })
 
+      if( Object.keys(newSourceResources).length > 0 ){
+        setSourceResources( {...sourceResources, ...newSourceResources} );
+      }
 
-      await showMessage( `Attached ${attached_verse_count} verses`);
-      
+
+      await showMessage( `Attached ${Object.keys(newSourceResources).length} verses\nDropped ${droppedVerseCount} verses.`);
+
     } catch( error ){
       //user declined
       console.log( `error importing ${error}` );
