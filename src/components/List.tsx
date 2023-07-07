@@ -1,10 +1,12 @@
 import React, {useMemo, useState, useEffect} from 'react';
 import 'react-data-grid/lib/styles.css';
-import DataGrid from 'react-data-grid';
+import DataGrid, {SelectColumn} from 'react-data-grid';
 import type { Column, SortColumn } from 'react-data-grid';
 
 
 interface DataObject {
+  id: number;
+
   group_name: string;
 
   num_books?: number;
@@ -26,10 +28,6 @@ interface TableProps {
   scope: string
 };
 
-interface KeyName{
-  key: string;
-  name: string;
-}
 
 function only_numbers(to_filter: string[]): string[] {
   return to_filter.reduce((acc: string[], curr: string) => {
@@ -46,31 +44,46 @@ export default function List({ resources, scope }: TableProps) {
   //need to slice and dice the resources so that it looks like we want it in the table.
   const [data, setData] = useState<DataObject[]>([]);
 
+  //compile and maintain a reverse index which will go from
+  //row number to indexing the resource(s) the row references.
+  const [reverseIndex, setReverseIndex] = useState<{[key: number]: Array<string>}>([]);
+
+  //This identifies which rows are selected in the list.  It needs to be reversed
+  //using the reverseIndex to figure out what resources are selected.
+  const [selectedRows, setSelectedRows] = useState((): ReadonlySet<number> => new Set());
+
   useEffect(() => {
     const newData: DataObject[] = [];
+    const newReverseIndex: {[key: number]: Array<string>} = {};
+
+    let id = 0;
 
 
     for( const group_name in resources ) if ( resources.hasOwnProperty(group_name) ){
       const group = resources[group_name];
 
       if( scope == "Group" ){
-        newData.push( {group_name, num_books: Object.keys(group).length,  })
+        newData.push( {id, group_name, num_books: Object.keys(group).length,  })
+        newReverseIndex[id++] = [group_name];
       }else{
         for( const book_name in group ) if ( group.hasOwnProperty( book_name ) ){
           const book = group[book_name];
 
           if( scope == "Book" ){
-            newData.push( {group_name, book_name, num_chapters: only_numbers(Object.keys(book.chapters)).length } );
+            newData.push( {id, group_name, book_name, num_chapters: only_numbers(Object.keys(book.chapters)).length } );
+            newReverseIndex[id++] = [group_name,book_name];
           }else{
             for( const chapter_number of only_numbers(Object.keys(book.chapters)) ){
               const chapter = book.chapters[chapter_number];
 
               if( scope == "Chapter" ){
-                newData.push( {group_name, book_name, chapter_number: parseInt(chapter_number), num_verses: only_numbers(Object.keys(chapter)).length })
+                newData.push( {id, group_name, book_name, chapter_number: parseInt(chapter_number), num_verses: only_numbers(Object.keys(chapter)).length })
+                newReverseIndex[id++] = [group_name,book_name,chapter_number];
               }else{
 
                 for( const verse_number of only_numbers(Object.keys(chapter))){
-                  newData.push( {group_name, book_name, chapter_number: parseInt(chapter_number), verse_number: parseInt(verse_number)})
+                  newData.push( {id,group_name, book_name, chapter_number: parseInt(chapter_number), verse_number: parseInt(verse_number)})
+                  newReverseIndex[id++] = [group_name,book_name,chapter_number,verse_number];
                 }
               }
 
@@ -82,14 +95,19 @@ export default function List({ resources, scope }: TableProps) {
     }
 
     setData(newData);
+    setReverseIndex(newReverseIndex);
 
   },[resources,scope]);
 
 
+
+
   //compile the names of the columns.
-  const [columns, setColumns] = useState<KeyName[]>([]);
+  const [columns, setColumns] = useState<Column<DataObject>[]>([]);
   useEffect(() => {
-    const newColumns: KeyName[] = [];
+    const newColumns: Column<DataObject>[] = [SelectColumn];
+    //newColumns.push( {key: 'id', name: 'ID'})
+
     newColumns.push( {key: 'group_name', name: 'Group'} );
     if( scope == "Group" ){
       newColumns.push( {key: 'num_books', name: 'Books'} );
@@ -132,6 +150,7 @@ export default function List({ resources, scope }: TableProps) {
     });
   }, [data, sortColumns]);
 
+
   return <DataGrid 
     className="flex-grow w-full"
     columns={columns} 
@@ -141,6 +160,8 @@ export default function List({ resources, scope }: TableProps) {
     defaultColumnOptions={{
       sortable: true,
     }}
-    
+    rowKeyGetter={ (row) => row.id }
+    selectedRows={selectedRows}
+    onSelectedRowsChange={setSelectedRows}
     />;
 }
