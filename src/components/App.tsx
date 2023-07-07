@@ -15,13 +15,14 @@ interface AppState {
     };
   };
   scope: string;
+  currentSelection: string[][];
 }
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({ resources: {}, scope: "Book" });
+  const [state, setState] = useState<AppState>({ resources: {}, scope: "Book", currentSelection:[] });
 
-  const {resources, scope} = state;
+  const {resources, scope, currentSelection } = state;
 
   const updateResources = (newResources: any) =>{
     setState( { ...state, resources: newResources } );
@@ -29,6 +30,10 @@ const App: React.FC = () => {
 
   const onScopeChange = (newScope: string) =>{
     setState( { ...state, scope: newScope } );
+  }
+
+  const setCurrentSelection = (newCurrentSelection: string[][] ) =>{
+    setState( { ...state, currentSelection: newCurrentSelection } );
   }
 
   function getUserConfirmation(message: string) {
@@ -142,13 +147,13 @@ const App: React.FC = () => {
       <header className="py-4 bg-gray-200">
         <nav className="container mx-auto">
           <ul className="flex space-x-4">
-            <FileMenu onAddResource={loadUsfmCallback} />
+            <FileMenu onAddResource={loadUsfmCallback} onAddSourceResource={loadSourceUsfmCallback} />
             <AboutMenu />
           </ul>
         </nav>
       </header>
 
-      <List resources={resources} scope={scope}/>
+      <List resources={resources} scope={scope} setCurrentSelection={setCurrentSelection}/>
 
       <footer className="py-4 bg-gray-200">
         <Toolbar onAddResource={loadUsfmCallback} 

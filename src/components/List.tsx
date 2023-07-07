@@ -26,6 +26,7 @@ interface TableProps {
     };
   };
   scope: string
+  setCurrentSelection: (newCurrentSelection: string[][] ) => void;
 };
 
 
@@ -39,25 +40,33 @@ function only_numbers(to_filter: string[]): string[] {
   }, []);
 }
 
-export default function List({ resources, scope }: TableProps) {
+export default function List({ resources, scope, setCurrentSelection }: TableProps) {
 
   //need to slice and dice the resources so that it looks like we want it in the table.
   const [data, setData] = useState<DataObject[]>([]);
 
   //compile and maintain a reverse index which will go from
   //row number to indexing the resource(s) the row references.
-  const [reverseIndex, setReverseIndex] = useState<{[key: number]: Array<string>}>([]);
+  const [reverseIndex, setReverseIndex] = useState<{[key: number]: string[]}>([]);
 
   //This identifies which rows are selected in the list.  It needs to be reversed
   //using the reverseIndex to figure out what resources are selected.
-  const [selectedRows, setSelectedRows] = useState((): ReadonlySet<number> => new Set());
+  const [selectedRows, _setSelectedRows] = useState((): ReadonlySet<number> => new Set());
+
+  //tap into the setSelectionRows callback so we can harvest the information
+  const setSelectedRows = ( selectionsRowIds: ReadonlySet<number>): void => {
+    _setSelectedRows(selectionsRowIds);
+
+    //convert into resource string indexing
+    const selectionsStrings: string[][] = Array.from(selectionsRowIds).map( (id:number):string[] => reverseIndex[id] || [] ).filter((arr: string[]) => arr.length > 0);
+    setCurrentSelection(selectionsStrings);
+  }
 
   useEffect(() => {
     const newData: DataObject[] = [];
     const newReverseIndex: {[key: number]: Array<string>} = {};
 
     let id = 0;
-
 
     for( const group_name in resources ) if ( resources.hasOwnProperty(group_name) ){
       const group = resources[group_name];
