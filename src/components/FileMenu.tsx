@@ -8,7 +8,7 @@ interface FileMenuProps {
 
 const FileMenu: React.FC<FileMenuProps> = ({onAddResource}) => {
   return (
-    <li className="relative group">
+    <li className="relative group z-10">
       <a href="#" className="text-gray-700 hover:text-black">
         File
       </a>
