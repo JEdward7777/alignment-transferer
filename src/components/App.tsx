@@ -83,7 +83,6 @@ const App: React.FC = () => {
     }, {});
     return parsed_headers;
   }
-
   
   const loadUsfmCallback = async ( contents: { [key: string]: string } ) => {
     try{
@@ -134,6 +133,10 @@ const App: React.FC = () => {
     }
   };
 
+  const loadSourceUsfmCallback = async ( contents: { [key: string]: string } ) => {
+    console.log( "loadSourceUsfmCallback called" );
+  }
+
   return (
     <div className="h-screen flex flex-col py-4">
       <header className="py-4 bg-gray-200">
@@ -148,7 +151,10 @@ const App: React.FC = () => {
       <List resources={resources} scope={scope}/>
 
       <footer className="py-4 bg-gray-200">
-        <Toolbar onAddResource={loadUsfmCallback} onScopeChange={onScopeChange}/>
+        <Toolbar onAddResource={loadUsfmCallback} 
+                 onAddSourceResource={loadSourceUsfmCallback}
+                 onScopeChange={onScopeChange}
+                />
       </footer>
     </div>
   );
