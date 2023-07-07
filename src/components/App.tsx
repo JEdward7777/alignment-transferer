@@ -138,9 +138,96 @@ const App: React.FC = () => {
     }
   };
 
-  const loadSourceUsfmCallback = async ( contents: { [key: string]: string } ) => {
-    console.log( "loadSourceUsfmCallback called" );
+  /**
+   * Checks to see if a specific string array references a given resource.
+   * The locations in the string are [group][book name][chapter num][verse num]
+   * The array only needs to be as long as the granularity.
+   * @param resourceKey A string array identifying resource at some granularity
+   * @returns true if the referenced resource is selected.
+   */
+  const isResourceSelected = ( resourceKey: string[] ):boolean => {
+    //iterate through the selected resources and return true on the first match.
+    //If the selected resource array is shorter but what is there matches then it is still
+    //a match.
+    selectionLoop: for( const selected of currentSelection ){
+      //if the resourceKey is shorter then the selected then it doesn't count
+      //a chapter isn't selected if a verse is selected from it even if it is all the verses selected from it.
+      if( selected.length > resourceKey.length ) continue selectionLoop;
+
+      for( let i = 0; i < resourceKey.length; ++i ){
+        //if we have matched this far and the iteration is longer then the selection
+        //key then it is a valid selection.  Return true.
+        if( i >= selected.length ) return true;
+
+        //if we found a key that is different, then just continue with the next
+        //selection option and see if it matches.
+        if( selected[i] != resourceKey[i] ) continue selectionLoop;
+      }
+      //if we finish the loop, then it is all selected.
+      return true;
+    }
+    return false;
   }
+
+  const loadSourceUsfmCallback = async ( contents: { [key: string]: string } ) => {
+    try{
+      //load the usfm.
+      const usfm_jsons = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value, { convertToInt: ['occurrence','occurrences'] })]));
+
+      //it would be good to come back to this and add confirmation
+      //if the pairing is changing an existing pairing.
+
+      let attached_verse_count = 0;
+
+      //loop down to the verse granularity and see if each verse has a place to be put.
+      Object.values( usfm_jsons ).forEach( (book) => {
+        const parsed_source_headers = parseUsfmHeaders( book.headers );
+
+        Object.entries(book.chapters).map(([source_chapter_num, source_chapter]) => {
+          console.log("hi");
+          //console.log( chapter );
+          Object.entries(source_chapter as any).map(([source_verse_num, source_verse]) => {
+
+              //ok, at this point we are at the verse level in the source language i.e. greek,
+              //and now we need to identify which verses there are in the different groups which match.
+
+              Object.entries( resources ).map(([target_group_name,target_group])=>{
+                Object.entries( target_group ).map(([target_book_name,target_book]) => {
+                  const parsed_target_headers = parseUsfmHeaders( target_book.headers );
+
+                  if( parsed_source_headers.toc3 == parsed_target_headers.toc3 ){
+                    Object.entries( target_book.chapters ).map(([target_chapter_num,target_chapter]) => {
+                      if( source_chapter_num == target_chapter_num ){
+                        Object.entries( target_chapter as any ).map(([target_verse_num,target_verse]) => {
+                          if( source_verse_num == target_verse_num ){
+                            console.log( "hi" );
+
+                            //now check if this verse is selected.
+                            if( isResourceSelected( [target_group_name, target_book_name, target_chapter_num, target_verse_num] ) ){
+
+                              //we have a match.  Go ahead and add the information.
+                              attached_verse_count++;
+                            }
+                          }
+                        });
+                      }
+                    });
+                  }
+                });
+              });
+          });
+        });
+      })
+
+
+      await showMessage( `Attached ${attached_verse_count} verses`);
+      
+    } catch( error ){
+      //user declined
+      console.log( `error importing ${error}` );
+      await showMessage( `Error ${error}`)
+    }
+  };
 
   return (
     <div className="h-screen flex flex-col py-4">

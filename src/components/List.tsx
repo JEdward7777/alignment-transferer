@@ -136,7 +136,7 @@ export default function List({ resources, scope, setCurrentSelection }: TablePro
     setColumns( newColumns );
   },[scope]);
   
-  //have a state for the sortedness of the container
+  //have a state for the order of the container
   const [sortColumns, setSortColumns] = useState<readonly SortColumn[]>([]);
 
   //actually sort the data.
