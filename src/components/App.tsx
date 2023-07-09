@@ -4,43 +4,34 @@ import FileMenu from './FileMenu';
 import AboutMenu from './AboutMenu';
 import List from './List';
 import Toolbar from './Toolbar';
+import GroupCollection from '../shared/GroupCollection'
+import {parseUsfmHeaders} from "../utils/usfm_misc";
 
 // @ts-ignore
 import usfm from 'usfm-js';
 
 interface AppState {
-  resources: {
-    [key: string]: {
-      [key: string]: any;
-    };
-  };
+  groupCollection: GroupCollection;
   scope: string;
   currentSelection: string[][];
-  sourceResources: {
-    [key: string]: any;
-  };
 }
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({ resources: {}, scope: "Book", currentSelection:[], sourceResources:{} });
+  const [state, setState] = useState<AppState>({ groupCollection: new GroupCollection(), scope: "Book", currentSelection:[] });
 
-  const {resources, scope, currentSelection, sourceResources } = state;
+  const {groupCollection, scope, currentSelection } = state;
 
-  const updateResources = (newResources: any) =>{
-    setState( { ...state, resources: newResources } );
+  const setGroupCollection = (newGroupCollection: GroupCollection ) => {
+    setState( { ...state, groupCollection: newGroupCollection } );
   }
 
   const onScopeChange = (newScope: string) =>{
     setState( { ...state, scope: newScope } );
   }
 
-  const setCurrentSelection = (newCurrentSelection: string[][] ) =>{
+  const setCurrentSelection = (newCurrentSelection: string[][] ) => {
     setState( { ...state, currentSelection: newCurrentSelection } );
-  }
-
-  const setSourceResources = (newSourceResources: {[key: string]: any} ) => {
-    setState( {...state, sourceResources: newSourceResources });
   }
 
   const stringResourceKey = (resourceKey: string[]): string => {
@@ -91,22 +82,12 @@ const App: React.FC = () => {
   }
   
 
-  function parseUsfmHeaders( headers_section:  {tag: string, content:string}[] ){
-    const parsed_headers: { [key: string]: string } = headers_section.reduce((acc: { [key: string]: string }, entry: {tag: string, content: string}) => {
-      if (entry.tag && entry.content) {
-        return { ...acc, [entry.tag]: entry.content };
-      }
-      return acc;
-    }, {});
-    return parsed_headers;
-  }
-  
-  const loadUsfmCallback = async ( contents: { [key: string]: string } ) => {
-    try{
-      console.log( `in app callback contents is ${contents}` );
 
+  
+  const loadUsfmTargetCallback = async ( contents: { [key: string]: string } ) => {
+    try{
       //load the usfm.
-      const usfm_jsons = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value,  { convertToInt: ['occurrence', 'occurrences'] })]));
+      const usfm_json = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value,  { convertToInt: ['occurrence', 'occurrences'] })]));
 
       const group_name = await promptTextInput( "What group name should the resources be loaded into?" );
 
@@ -114,34 +95,23 @@ const App: React.FC = () => {
       let confirmation_message = "";
 
       //now make sure that for each of the chapters being loaded that that chapter hasn't already been loaded.
-
-      if (group_name in resources) {
-        //the specific group exists already.
-        const existing_matching_resource = resources[group_name];
-        Object.values(usfm_jsons).forEach((value) => {
-          const parsed_headers = parseUsfmHeaders(value.headers);
-          //now see if the specific book already exists in this group
-          if (parsed_headers.h in existing_matching_resource) {
-            need_confirmation = true;
-            confirmation_message += `Do you want to reload ${parsed_headers.h} in ${group_name}?`
-          }
-        });
-      }
+      Object.values(usfm_json).forEach((usfm_book) => {
+        if( groupCollection.hasBookInGroup( {group_name, usfm_book}) ){
+          const parsed_headers = parseUsfmHeaders(usfm_book.headers);
+          need_confirmation = true;
+          confirmation_message += `Do you want to reload ${parsed_headers.h} in ${group_name}?`
+        }
+      })
 
       //now do the confirmation if needed.
       //this will throw an exception if it doesn't pass confirmation.
       if( need_confirmation ) await getUserConfirmation(confirmation_message  );
 
       //poke all the newly loaded items in.
-      const new_resources = {...resources};
-      if( !(group_name in new_resources) ) new_resources[group_name] = {};
-      Object.values( usfm_jsons ).forEach((value) => {
-        const parsed_headers = parseUsfmHeaders( value.headers );
-        new_resources[group_name][parsed_headers.h] = value;
-      })
-      updateResources( new_resources );
+      const newGroupCollection = groupCollection.addTargetUsfm({group_name, usfm_json })
+      setGroupCollection( newGroupCollection );
 
-      await showMessage( "resources loaded" )
+      await showMessage( "target usfm loaded" )
 
     } catch( error ){
       //user declined
@@ -184,64 +154,16 @@ const App: React.FC = () => {
   const loadSourceUsfmCallback = async ( contents: { [key: string]: string } ) => {
     try{
       //load the usfm.
-      const usfm_jsons = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value, { convertToInt: ['occurrence','occurrences'] })]));
+      const usfm_json = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value, { convertToInt: ['occurrence','occurrences'] })]));
 
       //it would be good to come back to this and add confirmation
       //if the pairing is changing an existing pairing.
 
-
-      const newSourceResources: {[key: string]: any} = {};
-
-      let droppedVerseCount = 0;
-
-      //loop down to the verse granularity and see if each verse has a place to be put.
-      Object.values( usfm_jsons ).forEach( (book) => {
-        const parsed_source_headers = parseUsfmHeaders( book.headers );
-
-        Object.entries(book.chapters).map(([source_chapter_num, source_chapter]) => {
-          Object.entries(source_chapter as any).map(([source_verse_num, source_verse]) => {
-
-            let verseUsed = false;
-            //ok, at this point we are at the verse level in the source language i.e. greek,
-            //and now we need to identify which verses there are in the different groups which match.
-
-            Object.entries(resources).map(([target_group_name, target_group]) => {
-              Object.entries(target_group).map(([target_book_name, target_book]) => {
-                const parsed_target_headers = parseUsfmHeaders(target_book.headers);
-
-                if (parsed_source_headers.toc3 == parsed_target_headers.toc3) {
-                  Object.entries(target_book.chapters).map(([target_chapter_num, target_chapter]) => {
-                    if (source_chapter_num == target_chapter_num) {
-                      Object.entries(target_chapter as any).map(([target_verse_num, target_verse]) => {
-                        if (source_verse_num == target_verse_num) {
-                          //now check if this verse is selected.
-                          if (isResourceSelected([target_group_name, target_book_name, target_chapter_num, target_verse_num])) {
-
-                            //we have a match.  Go ahead and add the information.
-                            const resourceString = stringResourceKey([target_group_name, target_book_name, target_chapter_num, target_verse_num]);
-                            newSourceResources[resourceString] = source_verse;
-
-                            verseUsed = true;
-                          }
-                        }
-                      });
-                    }
-                  });
-                }
-              });
-            });
-
-            if( !verseUsed ) droppedVerseCount++;
-          });
-        });
-      })
-
-      if( Object.keys(newSourceResources).length > 0 ){
-        setSourceResources( {...sourceResources, ...newSourceResources} );
-      }
+      const {newGroupCollection, addedVerseCount, droppedVerseCount } = groupCollection.addSourceUsfm( {usfm_json, isResourceSelected} );
+      setGroupCollection( newGroupCollection );
 
 
-      await showMessage( `Attached ${Object.keys(newSourceResources).length} verses\nDropped ${droppedVerseCount} verses.`);
+      await showMessage( `Attached ${addedVerseCount} verses\nDropped ${droppedVerseCount} verses.`);
 
     } catch( error ){
       //user declined
@@ -255,16 +177,16 @@ const App: React.FC = () => {
       <header className="py-4 bg-gray-200">
         <nav className="container mx-auto">
           <ul className="flex space-x-4">
-            <FileMenu onAddResource={loadUsfmCallback} onAddSourceResource={loadSourceUsfmCallback} />
+            <FileMenu onAddTargetResource={loadUsfmTargetCallback} onAddSourceResource={loadSourceUsfmCallback} />
             <AboutMenu />
           </ul>
         </nav>
       </header>
 
-      <List resources={resources} scope={scope} setCurrentSelection={setCurrentSelection}/>
+      <List groupCollection={groupCollection} scope={scope} setCurrentSelection={setCurrentSelection}/>
 
       <footer className="py-4 bg-gray-200">
-        <Toolbar onAddResource={loadUsfmCallback} 
+        <Toolbar onAddResource={loadUsfmTargetCallback} 
                  onAddSourceResource={loadSourceUsfmCallback}
                  onScopeChange={onScopeChange}
                 />

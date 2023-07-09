@@ -2,6 +2,11 @@ import React, {useMemo, useState, useEffect} from 'react';
 import 'react-data-grid/lib/styles.css';
 import DataGrid, {SelectColumn} from 'react-data-grid';
 import type { Column, SortColumn } from 'react-data-grid';
+import { only_numbers } from '@/utils/usfm_misc';
+import GroupCollection from '@/shared/GroupCollection';
+import Group from '@/shared/Group';
+import Book from '@/shared/Book';
+import Chapter from '@/shared/Chapter';
 
 
 interface DataObject {
@@ -20,27 +25,13 @@ interface DataObject {
 }
 
 interface TableProps {
-  resources: {
-    [key: string]: {
-      [key: string]: any;
-    };
-  };
+  groupCollection: GroupCollection
   scope: string
   setCurrentSelection: (newCurrentSelection: string[][] ) => void;
 };
 
 
-function only_numbers(to_filter: string[]): string[] {
-  return to_filter.reduce((acc: string[], curr: string) => {
-    const parsedNumber = parseInt(curr);
-    if (!isNaN(parsedNumber)) {
-      acc.push(curr);
-    }
-    return acc;
-  }, []);
-}
-
-export default function List({ resources, scope, setCurrentSelection }: TableProps) {
+export default function List({ groupCollection, scope, setCurrentSelection }: TableProps) {
 
   //need to slice and dice the resources so that it looks like we want it in the table.
   const [data, setData] = useState<DataObject[]>([]);
@@ -68,31 +59,31 @@ export default function List({ resources, scope, setCurrentSelection }: TablePro
 
     let id = 0;
 
-    for( const group_name in resources ) if ( resources.hasOwnProperty(group_name) ){
-      const group = resources[group_name];
+    for( const group_name of Object.keys(groupCollection.groups) ){
+      const group: Group = groupCollection.groups[group_name];
 
       if( scope == "Group" ){
         newData.push( {id, group_name, num_books: Object.keys(group).length,  })
         newReverseIndex[id++] = [group_name];
       }else{
-        for( const book_name in group ) if ( group.hasOwnProperty( book_name ) ){
-          const book = group[book_name];
+        for( const book_name of Object.keys(group.books) ){
+          const book: Book = group.books[book_name];
 
           if( scope == "Book" ){
-            newData.push( {id, group_name, book_name, num_chapters: only_numbers(Object.keys(book.chapters)).length } );
+            newData.push( {id, group_name, book_name, num_chapters: Object.keys(book.chapters).length } );
             newReverseIndex[id++] = [group_name,book_name];
           }else{
-            for( const chapter_number of only_numbers(Object.keys(book.chapters)) ){
-              const chapter = book.chapters[chapter_number];
+            for( const chapter_number of Object.keys(book.chapters).map( x=>parseInt(x) ) ){
+              const chapter: Chapter = book.chapters[chapter_number];
 
               if( scope == "Chapter" ){
-                newData.push( {id, group_name, book_name, chapter_number: parseInt(chapter_number), num_verses: only_numbers(Object.keys(chapter)).length })
-                newReverseIndex[id++] = [group_name,book_name,chapter_number];
+                newData.push( {id, group_name, book_name, chapter_number: chapter_number, num_verses: Object.keys(chapter).length })
+                newReverseIndex[id++] = [group_name,book_name,""+chapter_number];
               }else{
 
-                for( const verse_number of only_numbers(Object.keys(chapter))){
-                  newData.push( {id,group_name, book_name, chapter_number: parseInt(chapter_number), verse_number: parseInt(verse_number)})
-                  newReverseIndex[id++] = [group_name,book_name,chapter_number,verse_number];
+                for( const verse_number of Object.keys(chapter.verses).map(x=>parseInt(x))){
+                  newData.push( {id,group_name, book_name, chapter_number: chapter_number, verse_number: verse_number})
+                  newReverseIndex[id++] = [group_name,book_name,""+chapter_number,""+verse_number];
                 }
               }
 
@@ -106,7 +97,7 @@ export default function List({ resources, scope, setCurrentSelection }: TablePro
     setData(newData);
     setReverseIndex(newReverseIndex);
 
-  },[resources,scope]);
+  },[groupCollection,scope]);
 
 
 
