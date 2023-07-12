@@ -55,4 +55,29 @@ export default class Book {
             modifiedBook: new Book( {chapters:{...this.chapters,...modifiedChapters}, filename:this.filename, toc3Name:this.toc3Name } ),
         }
     }
+
+    static getListHeaders( scope:string ):string[]{
+        if( scope == "Book" ) return ["Book", "Chapters"];
+        return ["Book"].concat( Chapter.getListHeaders(scope) );
+    }
+
+    getListInfo( book_name: string, scope:string ):{ data:string[], keys:string[] }[]{
+        const result: { data:string[], keys:string[] }[] = [];
+        if( scope == "Book" ){
+            result.push({
+                data:[book_name,""+Object.values(this.chapters).length],
+                keys:[book_name],
+            })
+        }else{
+            Object.entries(this.chapters).forEach(([chapter_number,chapter])=>{
+                chapter.getListInfo(parseInt(chapter_number), scope).forEach((subResult) => {
+                    result.push( {
+                        data: [book_name].concat(subResult.data),
+                        keys: [book_name].concat(subResult.keys),
+                    })
+                });
+            });
+        }
+        return result;
+    }
 }

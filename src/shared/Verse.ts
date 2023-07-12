@@ -29,4 +29,11 @@ export default class Verse {
 
         return newVerse;
     }
+
+    static getListHeaders():string[]{
+        return ["Verse"];
+    }
+    getListInfo( verse_num: number ):{ data:string[], keys:string[] }[]{
+        return [{data:[ "" + verse_num ],keys:[""+verse_num]}];
+    }
 }

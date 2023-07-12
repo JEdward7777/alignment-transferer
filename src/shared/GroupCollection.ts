@@ -45,4 +45,14 @@ export default class GroupCollection {
             droppedVerseCount: totalDroppedVerseCount, 
             newGroupCollection: new GroupCollection(newGroups) };
     }
+
+    static getListHeaders( scope:string ):string[]{
+        return Group.getListHeaders(scope);
+    }
+
+    getListInfo( scope:string ):{ data:string[], keys:string[] }[]{
+        const result: { data:string[], keys:string[] }[] = [];
+        Object.entries(this.groups).forEach(([group_name,group])=>Object.assign(result,group.getListInfo(group_name,scope)));
+        return result;
+    }
 }

@@ -46,4 +46,29 @@ export default class Chapter {
             modifiedChapter:new Chapter( {...this.verses, ...modifiedVerses} ),
         }
     }
+
+    static getListHeaders( scope:string ):string[]{
+        if( scope == "Chapter" ) return ["Chapter","Verses"];
+        return ["Chapter"].concat( Verse.getListHeaders() );
+    }
+
+    getListInfo( chapter_num: number, scope:string ):{ data:string[], keys:string[] }[]{
+        const result: { data:string[], keys:string[] }[] = [];
+        if( scope == "Chapter" ){
+            result.push( {
+                data:[""+chapter_num,""+Object.values(this.verses).length], 
+                keys: [""+chapter_num],
+            } );
+        }else{
+            Object.entries(this.verses).forEach(([verse_number,verse])=>{
+                verse.getListInfo(parseInt(verse_number)).forEach((subResult) =>{
+                    result.push( {
+                        data: [""+chapter_num].concat(subResult.data),
+                        keys: [""+chapter_num].concat(subResult.keys),
+                    })
+                });
+            });
+        }
+        return result;
+    }
 }

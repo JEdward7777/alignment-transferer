@@ -68,4 +68,29 @@ export default class Group {
             droppedVerseCount:totalDroppedVerseCount,
             newGroup:new Group({ ...this.books, ...modifiedBooks}) };
     }
+
+    static getListHeaders( scope:string ):string[]{
+        if( scope == "Group" ) return ["Group", "Books" ];
+        return ["Group"].concat( Book.getListHeaders(scope) );
+    }
+
+    getListInfo( group_name: string, scope:string ):{ data:string[], keys:string[] }[]{
+        const result: { data:string[], keys:string[] }[] = [];
+        if( scope == "Group" ){
+            result.push({
+                data:[group_name,""+Object.values(this.books).length],
+                keys:[group_name],
+            });
+        }else{
+            Object.entries(this.books).forEach(([book_name,book])=>{
+                book.getListInfo(book_name,scope).forEach((subResult) => {
+                    result.push( {
+                        data: [group_name].concat(subResult.data),
+                        keys: [group_name].concat(subResult.keys),
+                    })
+                });
+            });
+        }
+        return result;
+    }
 }

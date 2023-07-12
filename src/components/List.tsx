@@ -9,20 +9,6 @@ import Book from '@/shared/Book';
 import Chapter from '@/shared/Chapter';
 
 
-interface DataObject {
-  id: number;
-
-  group_name: string;
-
-  num_books?: number;
-  book_name?: string;
-
-  num_chapters?: number;
-  chapter_number?: number;
-
-  num_verses?: number;
-  verse_number?: number;
-}
 
 interface TableProps {
   groupCollection: GroupCollection
@@ -34,7 +20,7 @@ interface TableProps {
 export default function List({ groupCollection, scope, setCurrentSelection }: TableProps) {
 
   //need to slice and dice the resources so that it looks like we want it in the table.
-  const [data, setData] = useState<DataObject[]>([]);
+  const [data, setData] = useState<{[key:string]:string}[]>([]);
 
   //compile and maintain a reverse index which will go from
   //row number to indexing the resource(s) the row references.
@@ -54,45 +40,23 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
   }
 
   useEffect(() => {
-    const newData: DataObject[] = [];
+    const newData: {[key:string]:string}[] = [];
     const newReverseIndex: {[key: number]: Array<string>} = {};
 
     let id = 0;
 
-    for( const group_name of Object.keys(groupCollection.groups) ){
-      const group: Group = groupCollection.groups[group_name];
-
-      if( scope == "Group" ){
-        newData.push( {id, group_name, num_books: Object.keys(group).length,  })
-        newReverseIndex[id++] = [group_name];
-      }else{
-        for( const book_name of Object.keys(group.books) ){
-          const book: Book = group.books[book_name];
-
-          if( scope == "Book" ){
-            newData.push( {id, group_name, book_name, num_chapters: Object.keys(book.chapters).length } );
-            newReverseIndex[id++] = [group_name,book_name];
-          }else{
-            for( const chapter_number of Object.keys(book.chapters).map( x=>parseInt(x) ) ){
-              const chapter: Chapter = book.chapters[chapter_number];
-
-              if( scope == "Chapter" ){
-                newData.push( {id, group_name, book_name, chapter_number: chapter_number, num_verses: Object.keys(chapter).length })
-                newReverseIndex[id++] = [group_name,book_name,""+chapter_number];
-              }else{
-
-                for( const verse_number of Object.keys(chapter.verses).map(x=>parseInt(x))){
-                  newData.push( {id,group_name, book_name, chapter_number: chapter_number, verse_number: verse_number})
-                  newReverseIndex[id++] = [group_name,book_name,""+chapter_number,""+verse_number];
-                }
-              }
-
-            }
-          }
-
-        }
+    const listHeaders = GroupCollection.getListHeaders(scope);
+    const listInfos = groupCollection.getListInfo(scope);
+    listInfos.forEach( (listInfo) => {
+      const dataObject: {[key:string]:string} = { id:"" +id };
+      for( let i = 0; i < listHeaders.length; ++i ){
+        dataObject[listHeaders[i]] = listInfo.data[i];
       }
-    }
+      newData.push(dataObject);
+
+      newReverseIndex[id] = listInfo.keys;
+      id++;
+    });
 
     setData(newData);
     setReverseIndex(newReverseIndex);
@@ -100,30 +64,13 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
   },[groupCollection,scope]);
 
 
-
-
   //compile the names of the columns.
-  const [columns, setColumns] = useState<Column<DataObject>[]>([]);
+  const [columns, setColumns] = useState<Column<{[key:string]:string}>[]>([]);
   useEffect(() => {
-    const newColumns: Column<DataObject>[] = [SelectColumn];
-    //newColumns.push( {key: 'id', name: 'ID'})
-
-    newColumns.push( {key: 'group_name', name: 'Group'} );
-    if( scope == "Group" ){
-      newColumns.push( {key: 'num_books', name: 'Books'} );
-    }else{
-      newColumns.push( {key: 'book_name', name: 'Book' } );
-      if( scope == "Book" ){
-        newColumns.push( {key: 'num_chapters', name: 'Chapters'} );
-      }else{
-        newColumns.push( {key: 'chapter_number', name: 'Chapter' } );
-        if( scope == "Chapter" ){
-          newColumns.push( {key: 'num_verses', name: 'Verses' } );
-        }else{
-          newColumns.push( {key: 'verse_number', name: 'Verse'} );
-        }
-      }
-    }
+    const newColumns: Column<{[key:string]:string}>[] = [SelectColumn];
+    GroupCollection.getListHeaders(scope).forEach( (header) => {
+      newColumns.push( {key: header, name: header } );
+    });
     setColumns( newColumns );
   },[scope]);
   
@@ -131,7 +78,7 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
   const [sortColumns, setSortColumns] = useState<readonly SortColumn[]>([]);
 
   //actually sort the data.
-  const sortedData = useMemo((): readonly DataObject[] => {
+  const sortedData = useMemo((): readonly {[key:string]:string}[] => {
     if (sortColumns.length === 0) return data;
 
     return [...data].sort((a, b) => {
@@ -160,7 +107,7 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
     defaultColumnOptions={{
       sortable: true,
     }}
-    rowKeyGetter={ (row) => row.id }
+    rowKeyGetter={ (row) => parseInt(row.id) }
     selectedRows={selectedRows}
     onSelectedRowsChange={setSelectedRows}
     />;
