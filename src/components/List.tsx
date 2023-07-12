@@ -30,6 +30,12 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
   //using the reverseIndex to figure out what resources are selected.
   const [selectedRows, _setSelectedRows] = useState((): ReadonlySet<number> => new Set());
 
+  //This is used by the React Data Grid to know what the headers are of each column.
+  const [columns, setColumns] = useState<Column<{[key:string]:string}>[]>([]);
+
+  //This is used to be able to force the grid to redraw when we need to.
+  const [key, setKey] = useState(0);
+
   //tap into the setSelectionRows callback so we can harvest the information
   const setSelectedRows = ( selectionsRowIds: ReadonlySet<number>): void => {
     _setSelectedRows(selectionsRowIds);
@@ -65,13 +71,13 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
 
 
   //compile the names of the columns.
-  const [columns, setColumns] = useState<Column<{[key:string]:string}>[]>([]);
   useEffect(() => {
     const newColumns: Column<{[key:string]:string}>[] = [SelectColumn];
     GroupCollection.getListHeaders(scope).forEach( (header) => {
       newColumns.push( {key: header, name: header } );
     });
     setColumns( newColumns );
+    setKey((prevKey) => prevKey + 1);
   },[scope]);
   
   //have a state for the order of the container
@@ -99,6 +105,7 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
 
 
   return <DataGrid 
+    key={key}
     className="flex-grow w-full"
     columns={columns} 
     rows={sortedData} 
