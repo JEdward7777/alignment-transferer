@@ -52,7 +52,7 @@ export default class GroupCollection {
 
     getListInfo( scope:string ):{ data:string[], keys:string[] }[]{
         const result: { data:string[], keys:string[] }[] = [];
-        Object.entries(this.groups).forEach(([group_name,group])=>Object.assign(result,group.getListInfo(group_name,scope)));
+        Object.entries(this.groups).forEach(([group_name,group])=>result.push(...group.getListInfo(group_name,scope)));
         return result;
     }
 }
