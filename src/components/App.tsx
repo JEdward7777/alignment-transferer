@@ -163,7 +163,8 @@ const App: React.FC = () => {
       setGroupCollection( newGroupCollection );
 
 
-      await showMessage( `Attached ${addedVerseCount} verses\nDropped ${droppedVerseCount} verses.`);
+      //await showMessage( `Attached ${addedVerseCount} verses\nDropped ${droppedVerseCount} verses.`);
+      await showMessage( `${addedVerseCount} connections added.`);
 
     } catch( error ){
       //user declined

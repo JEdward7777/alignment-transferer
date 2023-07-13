@@ -38,6 +38,9 @@ export default class Book {
         let totalAddedVerseCount = 0;
         let totalDroppedVerseCount = 0;
 
+        //TODO: the code for calculating dropped verses doesn't work right.  If the first group takes a verse and then the second group
+        //doesn't then the verse shouldn't be considered dropped, but the way this code works, all the drops from all the groups are added together.
+
         Object.entries(usfm_book.chapters).forEach( ([chapter_number_string,usfm_chapter]:[string,any]) => {
             if( is_number(chapter_number_string) ){
                 const chapter_number_int = parseInt( chapter_number_string );
