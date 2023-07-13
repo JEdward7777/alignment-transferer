@@ -7,6 +7,7 @@ enum VerseState {
 
 export default class Verse {
 
+    state: VerseState = VerseState.Unpaired;
 
     clone(): Verse{
         return new Verse();
@@ -25,15 +26,18 @@ export default class Verse {
     addSourceUsfm( usfm_verse: any ):Verse{
         const newVerse: Verse = this.clone();
 
+        //TODO: need to check the aligned state to know the proper state to set here.
+        newVerse.state = VerseState.Unaligned;
+
         //TODO: need to use the received source usfm material.
 
         return newVerse;
     }
 
     static getListHeaders():string[]{
-        return ["Verse"];
+        return ["Verse","Status"];
     }
     getListInfo( verse_num: number ):{ data:string[], keys:string[] }[]{
-        return [{data:[ "" + verse_num ],keys:[""+verse_num]}];
+        return [{data:[ "" + verse_num, this.state ],keys:[""+verse_num]}];
     }
 }
