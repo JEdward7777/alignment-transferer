@@ -1,5 +1,7 @@
 import { is_number, parseUsfmHeaders } from "@/utils/usfm_misc";
 import Book from "./Book";
+import Verse from "./Verse";
+import { TState } from "@/components/WordAlignerDialog";
 
 export default class Group {
     books: { [key: string]: Book };
@@ -92,5 +94,17 @@ export default class Group {
             });
         }
         return result;
+    }
+
+    getVerseBySelector(selector: string[]): Verse | null {
+        if( selector.length < 1 ) return null;
+        if( !(selector[0] in this.books ) ) return null;
+        return this.books[selector[0]].getVerseBySelector( selector.slice(1) );
+    }
+
+    getVerseAlignmentStateBySelector(selector: string[]): TState | null {
+        if( selector.length < 1 ) return null;
+        if( !(selector[0] in this.books ) ) return null;
+        return this.books[selector[0]].getVerseAlignmentStateBySelector( selector.slice(1) );
     }
 }

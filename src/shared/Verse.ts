@@ -1,3 +1,7 @@
+import { TState } from "@/components/WordAlignerDialog";
+import { parseUsfmToWordAlignerData_JSON } from "@/utils/usfm_misc";
+import { TUsfmVerse } from "word-aligner-rcl";
+
 enum VerseState {
     Unpaired = 'unpaired',
     Unaligned = 'unaligned',
@@ -8,29 +12,32 @@ enum VerseState {
 export default class Verse {
 
     state: VerseState = VerseState.Unpaired;
+    sourceVerse: TUsfmVerse | null = null;
+    targetVerse: TUsfmVerse | null = null;
 
     clone(): Verse{
-        return new Verse();
+        const result: Verse = new Verse();
+        result.sourceVerse = this.sourceVerse;
+        result.targetVerse = this.targetVerse;
+        result.state = this.state;
+        return result;
     }
 
 
-    addTargetUsfm( usfm_verse: any ): Verse{
+    addTargetUsfm( usfm_verse: TUsfmVerse ): Verse{
         const newVerse: Verse = this.clone();
+        newVerse.targetVerse = usfm_verse;
 
-
-        //TODO: need to create ngrams etc from the data.
 
         return newVerse;
     }
 
-    addSourceUsfm( usfm_verse: any ):Verse{
+    addSourceUsfm( usfm_verse: TUsfmVerse ):Verse{
         const newVerse: Verse = this.clone();
+        newVerse.sourceVerse = usfm_verse;
 
         //TODO: need to check the aligned state to know the proper state to set here.
         newVerse.state = VerseState.Unaligned;
-
-        //TODO: need to use the received source usfm material.
-
         return newVerse;
     }
 
@@ -39,5 +46,29 @@ export default class Verse {
     }
     getListInfo( verse_num: number ):{ data:string[], keys:string[] }[]{
         return [{data:[ "" + verse_num, this.state ],keys:[""+verse_num]}];
+    }
+
+    getAlignmentState( chapter: number, verse: number ): TState | null{
+        if( this.sourceVerse === null ) return null;
+        if( this.targetVerse === null ) return null;
+
+        //console.log( `potato: ${potato}`);
+
+
+        const wordAlignerData = parseUsfmToWordAlignerData_JSON( this.targetVerse, this.sourceVerse );
+
+
+        return {
+            aligned: this.state !== VerseState.Unaligned,
+            sourceLanguage: "sourceLang", //TODO: see if I can pull this information out of the usfm.
+            targetLanguage: "targetLang", //TODO: ditto
+            reference: {
+                chapter, verse
+            },
+            alignerData:{
+                wordBank:wordAlignerData.targetWords,
+                alignments:wordAlignerData.verseAlignments,
+            }
+        };
     }
 }

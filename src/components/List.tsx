@@ -1,12 +1,8 @@
 import React, {useMemo, useState, useEffect} from 'react';
 import 'react-data-grid/lib/styles.css';
-import DataGrid, {SelectColumn} from 'react-data-grid';
-import type { Column, SortColumn } from 'react-data-grid';
-import { only_numbers } from '@/utils/usfm_misc';
+import DataGrid, {SelectColumn, } from 'react-data-grid';
+import type { Column, SortColumn, CellClickArgs,  } from 'react-data-grid';
 import GroupCollection from '@/shared/GroupCollection';
-import Group from '@/shared/Group';
-import Book from '@/shared/Book';
-import Chapter from '@/shared/Chapter';
 
 
 
@@ -14,10 +10,11 @@ interface TableProps {
   groupCollection: GroupCollection
   scope: string
   setCurrentSelection: (newCurrentSelection: string[][] ) => void;
+  onEntryDoubleClick: (currentTarget: string[] ) => void;
 };
 
 
-export default function List({ groupCollection, scope, setCurrentSelection }: TableProps) {
+export default function List({ groupCollection, scope, setCurrentSelection, onEntryDoubleClick }: TableProps) {
 
   //need to slice and dice the resources so that it looks like we want it in the table.
   const [data, setData] = useState<{[key:string]:string}[]>([]);
@@ -104,6 +101,12 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
   }, [data, sortColumns]);
 
 
+  const onCellDoubleClick = ( target: CellClickArgs<{[key:string]:string}> ) => {
+    //console.log( `double clicked id ${target.row.id}` );
+
+    onEntryDoubleClick( reverseIndex[parseInt(target.row.id)] );
+  };
+
   return <DataGrid 
     key={key}
     className="flex-grow w-full"
@@ -117,5 +120,6 @@ export default function List({ groupCollection, scope, setCurrentSelection }: Ta
     rowKeyGetter={ (row) => parseInt(row.id) }
     selectedRows={selectedRows}
     onSelectedRowsChange={setSelectedRows}
+    onCellDoubleClick={onCellDoubleClick}
     />;
 }

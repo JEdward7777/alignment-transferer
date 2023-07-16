@@ -1,5 +1,6 @@
 import { is_number } from "@/utils/usfm_misc";
 import Verse from "./Verse";
+import { TState } from "@/components/WordAlignerDialog";
 
 export default class Chapter {
     verses: { [key: number]: Verse };
@@ -70,5 +71,21 @@ export default class Chapter {
             });
         }
         return result;
+    }
+
+
+    getVerseBySelector(selector: string[]): Verse | null {
+        if( selector.length < 1 ) return null;
+        const verse_num : number = parseInt(selector[0]);
+        if( !(verse_num in this.verses ) ) return null;
+        return this.verses[verse_num];
+    }
+
+
+    getVerseAlignmentStateBySelector(chapter_num: number, selector: string[]): TState | null {
+        if( selector.length < 1 ) return null;
+        const verse_num : number = parseInt(selector[0]);
+        if( !(verse_num in this.verses ) ) return null;
+        return this.verses[verse_num].getAlignmentState( chapter_num, verse_num );
     }
 }

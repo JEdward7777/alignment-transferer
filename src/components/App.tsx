@@ -1,26 +1,40 @@
 // App.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import FileMenu from './FileMenu';
 import AboutMenu from './AboutMenu';
 import List from './List';
 import Toolbar from './Toolbar';
 import GroupCollection from '../shared/GroupCollection'
 import {parseUsfmHeaders} from "../utils/usfm_misc";
+import useWindowDimensions from '../hooks/useWindowDimensions'
 
 // @ts-ignore
 import usfm from 'usfm-js';
+import Verse from '@/shared/Verse';
+import { TAlignerStatus, TState, WordAlignerDialog } from './WordAlignerDialog';
+
+
 
 interface AppState {
   groupCollection: GroupCollection;
   scope: string;
   currentSelection: string[][];
+  doubleClickedVerse: string[] | null;
+  alignerStatus: TAlignerStatus | null; 
+}
+
+function translate( key: string ): string{
+
+  console.log( `missed translate key: ${key}` );
+  return ":-)";
+
 }
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({ groupCollection: new GroupCollection(), scope: "Book", currentSelection:[] });
+  const [state, setState] = useState<AppState>({ groupCollection: new GroupCollection(), scope: "Book", currentSelection:[], doubleClickedVerse:null, alignerStatus:null });
 
-  const {groupCollection, scope, currentSelection } = state;
+  const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus } = state;
 
   const setGroupCollection = (newGroupCollection: GroupCollection ) => {
     setState( { ...state, groupCollection: newGroupCollection } );
@@ -34,10 +48,18 @@ const App: React.FC = () => {
     setState( { ...state, currentSelection: newCurrentSelection } );
   }
 
-  const stringResourceKey = (resourceKey: string[]): string => {
-    const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
-    return sanitizedKey.join('->');
+  const setDoubleClickedVerse = (newDoubleClickedVerse: string[] | null ) => {
+    setState( {...state, doubleClickedVerse: newDoubleClickedVerse } );
   }
+
+  const setAlignerStatus = (newAlignerStatus: TAlignerStatus ) => {
+    setState( {...state, alignerStatus: newAlignerStatus } );
+  }
+
+  // const stringResourceKey = (resourceKey: string[]): string => {
+  //   const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
+  //   return sanitizedKey.join('->');
+  // }
 
   function getUserConfirmation(message: string) {
     return new Promise((resolve, reject) => {
@@ -173,6 +195,48 @@ const App: React.FC = () => {
     }
   };
 
+
+  //This use effect responds when a double click in the list happens when it is on a verse to pop open the aliner dialog.
+  useEffect(() =>{
+    console.log( `Behold the double clicked verse is ${doubleClickedVerse}` );
+
+    if( doubleClickedVerse != null ){
+      //const verse: Verse | null = groupCollection.getVerseBySelector(doubleClickedVerse);
+
+      const state: TState | null = groupCollection.getVerseAlignmentStateBySelector(doubleClickedVerse);
+
+      if( state != null ){
+        setAlignerStatus( {
+          state,
+          actions:{
+            onAlignmentsChange: (results) => true, //TODO
+            cancelAlignment: () => {}, //TODO
+            saveAlignment: (results) => {}, //TODO 
+          },
+        } );
+
+
+      }else{
+        showMessage( "Change scope to verse for double click to show alignment dialog" );
+      }
+    }
+
+  },[doubleClickedVerse]);
+
+
+
+  const wordAlignmentScreenRatio = 0.7
+  const wordAlignmentMaxHeightPx = 1000
+  const { height } = useWindowDimensions()
+  const wordAlignerHeight = useMemo(() => {
+    let _height = 20;
+    if( height != null ){
+      _height = wordAlignmentScreenRatio * height;
+    }
+    if (_height > wordAlignmentMaxHeightPx) _height = wordAlignmentMaxHeightPx
+    return _height
+  }, [height])
+
   return (
     <div className="h-screen flex flex-col py-4">
       <header className="py-4 bg-gray-200">
@@ -184,7 +248,13 @@ const App: React.FC = () => {
         </nav>
       </header>
 
-      <List groupCollection={groupCollection} scope={scope} setCurrentSelection={setCurrentSelection}/>
+      <List groupCollection={groupCollection} scope={scope} setCurrentSelection={setCurrentSelection} onEntryDoubleClick={setDoubleClickedVerse}/>
+
+      <WordAlignerDialog
+        alignerStatus={alignerStatus}
+        height={wordAlignerHeight}
+        translate={translate}
+        />
 
       <footer className="py-4 bg-gray-200">
         <Toolbar onAddResource={loadUsfmTargetCallback} 

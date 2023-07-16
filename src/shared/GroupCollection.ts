@@ -1,5 +1,7 @@
 import Group from "./Group";
 import {parseUsfmHeaders} from "../utils/usfm_misc";
+import Verse from "./Verse";
+import { TState } from "@/components/WordAlignerDialog";
 
 export default class GroupCollection {
     groups: { [key: string]: Group };
@@ -54,5 +56,29 @@ export default class GroupCollection {
         const result: { data:string[], keys:string[] }[] = [];
         Object.entries(this.groups).forEach(([group_name,group])=>result.push(...group.getListInfo(group_name,scope)));
         return result;
+    }
+
+    /**
+     * This function is used to grab a Verse object using a selector.
+     * If the selector is too short or doesn't reference a verse null is returned.
+     * @param selector a selector as defined by the keys returned from getListInfo.
+     * @returns 
+     */
+    getVerseBySelector(selector: string[]): Verse | null {
+      if( selector.length < 1 ) return null;
+      if( !(selector[0] in this.groups ) ) return null;
+      return this.groups[selector[0]].getVerseBySelector( selector.slice(1) );
+    }
+
+    /**
+     * This function is used to grab the verse alignment state using a selector.
+     * If the selector is too short or doesn't reference a verse null is returned.
+     * @param selector a selector as defined by the keys returned from getListInfo.
+     * @returns 
+     */
+    getVerseAlignmentStateBySelector(selector: string[]): TState | null {
+      if( selector.length < 1 ) return null;
+      if( !(selector[0] in this.groups ) ) return null;
+      return this.groups[selector[0]].getVerseAlignmentStateBySelector( selector.slice(1) );
     }
 }
