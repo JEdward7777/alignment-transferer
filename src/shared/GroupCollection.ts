@@ -93,8 +93,8 @@ export default class GroupCollection {
     updateAlignmentState( alignmentDialogResult: any, selector: string[] ): GroupCollection{
         //need to figure out if any group got hit and if so return a group collection which
         //has a modified version of it.
-        if( selector.length < 1 ) return this;
-        if( !(selector[0] in this.groups ) ) return this;
+        if( selector.length < 1 ) throw new Error( "Group not selected" );
+        if( !(selector[0] in this.groups ) ) new Error( "Group not found" );
 
         const newGroup = this.groups[selector[0]].updateAlignmentState( alignmentDialogResult, selector.slice(1) );
 

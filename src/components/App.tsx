@@ -245,21 +245,27 @@ const App: React.FC = () => {
     if( doubleClickedVerse != null ){
       //const verse: Verse | null = groupCollection.getVerseBySelector(doubleClickedVerse);
 
-      const state: TState | null = groupCollection.getVerseAlignmentStateBySelector(doubleClickedVerse);
+      try {
+        const state: TState | null = groupCollection.getVerseAlignmentStateBySelector(doubleClickedVerse);
 
-      if( state != null ){
-        setAlignerStatus( {
-          state,
-          actions:{
-            onAlignmentsChange: (results) => true,
-            cancelAlignment: onCancelAlignment, 
-            saveAlignment: onSaveAlignment,
-          },
-        } );
+        if (state != null) {
+          setAlignerStatus({
+            state,
+            actions: {
+              onAlignmentsChange: (results) => true,
+              cancelAlignment: onCancelAlignment,
+              saveAlignment: onSaveAlignment,
+            },
+          });
 
 
-      }else{
-        showMessage( "Change scope to verse for double click to show alignment dialog" );
+        } else {
+          showMessage("Change scope to verse for double click to show alignment dialog");
+        }
+      } catch (error) {
+        //user declined
+        console.log(`error importing ${error}`);
+        showMessage(`Error ${error}`)
       }
     }
 

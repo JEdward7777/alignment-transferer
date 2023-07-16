@@ -83,9 +83,9 @@ export default class Chapter {
 
 
     getVerseAlignmentStateBySelector(chapter_num: number, selector: string[]): TState | null {
-        if( selector.length < 1 ) return null;
+        if( selector.length < 1 ) throw new Error( "Verse not selected for alignment." );
         const verse_num : number = parseInt(selector[0]);
-        if( !(verse_num in this.verses ) ) return null;
+        if( !(verse_num in this.verses ) ) throw new Error( "Verse not found." );
         return this.verses[verse_num].getAlignmentState( chapter_num, verse_num );
     }
 

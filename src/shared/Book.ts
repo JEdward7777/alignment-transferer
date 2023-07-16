@@ -96,9 +96,9 @@ export default class Book {
 
 
     getVerseAlignmentStateBySelector(selector: string[]): TState | null {
-        if( selector.length < 1 ) return null;
+        if( selector.length < 1 ) throw new Error( "Chapter not selected for editing verse." );
         const chapter_num : number = parseInt(selector[0]);
-        if( !(chapter_num in this.chapters ) ) return null;
+        if( !(chapter_num in this.chapters ) ) throw new Error( "Chapter not found in book." );
         return this.chapters[chapter_num].getVerseAlignmentStateBySelector( chapter_num, selector.slice(1) );
     }
 

@@ -49,8 +49,8 @@ export default class Verse {
     }
 
     getAlignmentState( chapter: number, verse: number ): TState | null{
-        if( this.sourceVerse === null ) return null;
-        if( this.targetVerse === null ) return null;
+        if( this.sourceVerse === null ) throw new Error( "No source text in verse" );
+        if( this.targetVerse === null ) throw new Error( "No target text in verse" );
 
         //console.log( `potato: ${potato}`);
 

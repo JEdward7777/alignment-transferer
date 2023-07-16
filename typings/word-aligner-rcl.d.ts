@@ -15,7 +15,7 @@ declare module 'word-aligner-rcl'{
         endTag?: string;
         lemma?: string;
         morph?: string;
-        strongs?: string; //usfm uses strongs
+        strongs?: string; //something was using strongs, I forget
         strong?: string; //alignment dialog uses strong
         tag?: string;
 

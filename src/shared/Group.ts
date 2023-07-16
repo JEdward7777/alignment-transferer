@@ -110,8 +110,8 @@ export default class Group {
 
     updateAlignmentState( alignmentDialogResult: any, selector: string[] ): Group{
 
-        if( selector.length < 1 ) return this;
-        if( !(selector[0] in this.books ) ) return this;
+        if( selector.length < 1 ) throw new Error( "Book not selected." );
+        if( !(selector[0] in this.books ) ) throw new Error( "Book not found." );;
 
         const newBook = this.books[selector[0]].updateAlignmentState( alignmentDialogResult, selector.slice(1) );
 
