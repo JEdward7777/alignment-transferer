@@ -102,8 +102,6 @@ export default function List({ groupCollection, scope, setCurrentSelection, onEn
 
 
   const onCellDoubleClick = ( target: CellClickArgs<{[key:string]:string}> ) => {
-    //console.log( `double clicked id ${target.row.id}` );
-
     onEntryDoubleClick( reverseIndex[parseInt(target.row.id)] );
   };
 

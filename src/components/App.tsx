@@ -67,10 +67,6 @@ const App: React.FC = () => {
     setState( {...state, alignerStatus: newAlignerStatus } );
   }
 
-  const setGroupCollectionAndAlignerStatus = (newGroupCollection: GroupCollection, newAlignerStatus: TAlignerStatus | null ) => {
-    setState( {...state, alignerStatus: newAlignerStatus, groupCollection: newGroupCollection } );
-  }
-
   // const stringResourceKey = (resourceKey: string[]): string => {
   //   const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
   //   return sanitizedKey.join('->');
@@ -215,7 +211,11 @@ const App: React.FC = () => {
    * This function is for closing the alignment dialog when cancel is clicked.
    */
   const onCancelAlignment = () => {
-    setAlignerStatus(null);
+    setState({
+      ...state,
+      alignerStatus: null,
+      doubleClickedVerse: null,
+    });
   }
 
   /**
@@ -235,7 +235,11 @@ const App: React.FC = () => {
     }
     //some reason can't call both, so combine them.
     //Setting aligner status to null closes the dialog.
-    setGroupCollectionAndAlignerStatus(newGroupCollection,null);
+    setState( {...state, 
+      alignerStatus: null, //null the alinger state for the dialog being closed.
+      groupCollection: newGroupCollection, //replace the group collection so the change has been updated.
+      doubleClickedVerse: null, //null the double clicked verse selection so we can double click the same verse again.
+     } );
   }
 
   //This use effect responds when a double click in the list happens when it is on a verse to pop open the aliner dialog.
