@@ -107,4 +107,15 @@ export default class Group {
         if( !(selector[0] in this.books ) ) return null;
         return this.books[selector[0]].getVerseAlignmentStateBySelector( selector.slice(1) );
     }
+
+    updateAlignmentState( alignmentDialogResult: any, selector: string[] ): Group{
+
+        if( selector.length < 1 ) return this;
+        if( !(selector[0] in this.books ) ) return this;
+
+        const newBook = this.books[selector[0]].updateAlignmentState( alignmentDialogResult, selector.slice(1) );
+
+        const newBooks = { ...this.books, [selector[0]]: newBook };
+        return new Group( newBooks );
+    }
 }

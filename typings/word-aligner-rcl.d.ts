@@ -8,14 +8,15 @@ declare module 'word-aligner-rcl'{
         position?: number;
 
         //Sometimes it is word sometimes it is text.
-        word?: string;
-        text?: string;
+        word?: string; //usfm format uses word
+        text?: string; //alignment uses text.
 
         content?: string;
         endTag?: string;
         lemma?: string;
         morph?: string;
-        strongs?: string;
+        strongs?: string; //usfm uses strongs
+        strong?: string; //alignment dialog uses strong
         tag?: string;
 
         children?: TWord[];
@@ -75,6 +76,7 @@ declare module 'word-aligner-rcl'{
     export module AlignmentHelpers{
         export function getWordListFromVerseObjects( verseObjects: TWord[] ): Token[];
         export function markTargetWordsAsDisabledIfAlreadyUsedForAlignments(targetWordList: Token[], alignments: TAlignment[]):TWord[];
+        export function addAlignmentsToVerseUSFM( wordBankWords: TWord[], verseAlignments: any, targetVerseText: string ): string;
     }
 }
 

@@ -88,4 +88,15 @@ export default class Chapter {
         if( !(verse_num in this.verses ) ) return null;
         return this.verses[verse_num].getAlignmentState( chapter_num, verse_num );
     }
+
+    updateAlignmentState( alignmentDialogResult: any, selector: string[] ): Chapter{
+        if( selector.length < 1 ) return this;
+        const verse_num: number = parseInt( selector[0] );
+        if( !(verse_num in this.verses) ) return this;
+
+        const newVerse = this.verses[verse_num].updateAlignmentState(alignmentDialogResult );
+
+        const newVerses = { ...this.verses, [verse_num]: newVerse };
+        return new Chapter( newVerses );
+    }
 }

@@ -81,4 +81,26 @@ export default class GroupCollection {
       if( !(selector[0] in this.groups ) ) return null;
       return this.groups[selector[0]].getVerseAlignmentStateBySelector( selector.slice(1) );
     }
+
+    /**
+     * This function takes the result of the alignment dialog when save is set
+     * and returns a new group collection which has the new changes merged in.
+     * The GroupCollection and sub objects are treated as immutable for react's sake
+     * except for the usfm objects at the leaves.
+     * @param alignmentDialogResult Returned by the alignment dialog
+     * @param selector The same selector which is used by the previous functions
+     */
+    updateAlignmentState( alignmentDialogResult: any, selector: string[] ): GroupCollection{
+        //need to figure out if any group got hit and if so return a group collection which
+        //has a modified version of it.
+        if( selector.length < 1 ) return this;
+        if( !(selector[0] in this.groups ) ) return this;
+
+        const newGroup = this.groups[selector[0]].updateAlignmentState( alignmentDialogResult, selector.slice(1) );
+
+        const newGroups = { ...this.groups,
+            [selector[0]]: newGroup,
+        }
+        return new GroupCollection(newGroups);
+    }
 }

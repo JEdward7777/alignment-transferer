@@ -1,6 +1,6 @@
-import { TState } from "@/components/WordAlignerDialog";
-import { parseUsfmToWordAlignerData_JSON } from "@/utils/usfm_misc";
-import { TUsfmVerse } from "word-aligner-rcl";
+import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
+import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTargetString } from "@/utils/usfm_misc";
+import { AlignmentHelpers, TUsfmVerse } from "word-aligner-rcl";
 
 enum VerseState {
     Unpaired = 'unpaired',
@@ -70,5 +70,21 @@ export default class Verse {
                 alignments:wordAlignerData.verseAlignments,
             }
         };
+    }
+
+    updateAlignmentState( alignmentDialogResult: TWordAlignerAlignmentResult ): Verse{
+        let result: Verse = this;
+
+        if( this.targetVerse != null ){
+            const newTargetVerse = mergeInAlignments( alignmentDialogResult.targetWords, alignmentDialogResult.verseAlignments, this.targetVerse );
+            console.log( "hi how are you?" );
+
+            if( newTargetVerse != null ){
+                result = this.addTargetUsfm({verseObjects: newTargetVerse} );
+            }
+        }
+        
+        //return this.addTargetUsfm(newTargetVerse); TODO: need to figure out how to assign the result.
+        return result;
     }
 }

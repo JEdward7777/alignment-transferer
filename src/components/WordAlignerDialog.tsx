@@ -2,15 +2,22 @@ import React, { useEffect, useState } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import { RxLink2, RxLinkBreak2 } from 'react-icons/rx'
-import { SuggestingWordAligner, TAlignerData, TAlignment, TReference } from 'word-aligner-rcl'
+import { SuggestingWordAligner, TAlignerData, TAlignment, TReference, TWord } from 'word-aligner-rcl'
 import Button from '@mui/material/Button'
 import Paper, { PaperProps } from '@mui/material/Paper';
 import Draggable from 'react-draggable'
 
 const alignmentIconStyle = { marginLeft:'50px' }
 
+export interface TWordAlignerAlignment{
+  sourceNgram: TWord[];
+  targetNgram: TWord[];
+}
 
-
+export interface TWordAlignerAlignmentResult{
+  targetWords: TWord[];
+  verseAlignments: TWordAlignerAlignment[];
+}
 
 
 export interface TState{

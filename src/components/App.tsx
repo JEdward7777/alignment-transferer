@@ -67,6 +67,10 @@ const App: React.FC = () => {
     setState( {...state, alignerStatus: newAlignerStatus } );
   }
 
+  const setGroupCollectionAndAlignerStatus = (newGroupCollection: GroupCollection, newAlignerStatus: TAlignerStatus | null ) => {
+    setState( {...state, alignerStatus: newAlignerStatus, groupCollection: newGroupCollection } );
+  }
+
   // const stringResourceKey = (resourceKey: string[]): string => {
   //   const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
   //   return sanitizedKey.join('->');
@@ -214,6 +218,26 @@ const App: React.FC = () => {
     setAlignerStatus(null);
   }
 
+  /**
+   * This function gets called from the alignment dialog when save gets called.
+   * @param result 
+   */
+  const onSaveAlignment = ( result: null | any ) => {
+    let newGroupCollection = groupCollection;
+    try{
+      if( result != null && doubleClickedVerse != null ){
+        newGroupCollection = groupCollection.updateAlignmentState( result, doubleClickedVerse );
+      }
+    } catch( error ){
+      //user declined
+      console.log( `error importing ${error}` );
+      showMessage( `Error ${error}`)
+    }
+    //some reason can't call both, so combine them.
+    //Setting aligner status to null closes the dialog.
+    setGroupCollectionAndAlignerStatus(newGroupCollection,null);
+  }
+
   //This use effect responds when a double click in the list happens when it is on a verse to pop open the aliner dialog.
   useEffect(() =>{
     console.log( `Behold the double clicked verse is ${doubleClickedVerse}` );
@@ -227,9 +251,9 @@ const App: React.FC = () => {
         setAlignerStatus( {
           state,
           actions:{
-            onAlignmentsChange: (results) => true, //TODO
-            cancelAlignment: onCancelAlignment, //TODO
-            saveAlignment: (results) => {}, //TODO 
+            onAlignmentsChange: (results) => true,
+            cancelAlignment: onCancelAlignment, 
+            saveAlignment: onSaveAlignment,
           },
         } );
 

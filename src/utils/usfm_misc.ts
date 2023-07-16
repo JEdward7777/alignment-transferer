@@ -1,7 +1,8 @@
 import {default as word_aligner_default} from "word-aligner";
 import _wordmapLexer, { Token } from "wordmap-lexer";
-import { TUsfmVerse, TWord, usfmHelpers, AlignmentHelpers, TAlignment } from "word-aligner-rcl";
+import { TUsfmVerse, TWord, usfmHelpers, AlignmentHelpers, TAlignment, TAlignerData } from "word-aligner-rcl";
 import { getOriginalLanguageListForVerseData, getAlignedWordListFromAlignments, updateAlignedWordsFromOriginalWordList } from 'word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';
+import { TWordAlignerAlignment, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
 export function parseUsfmHeaders(headers_section: { tag: string, content: string }[]) {
     const parsed_headers: { [key: string]: string } = headers_section.reduce((acc: { [key: string]: string }, entry: { tag: string, content: string }) => {
         if (entry.tag && entry.content) {
@@ -62,8 +63,6 @@ export function parseUsfmToWordAlignerData_JSON(targetVerseUSFM: TUsfmVerse, sou
   
   var targetTokens : Token[] = [];
   if (targetVerseUSFM) {
-    const targetTokensWords: string[] = [];
-
     if( targetVerseUSFM ){
       const targetVerseString = verseObjectsToTargetString( targetVerseUSFM.verseObjects );
       targetTokens = _wordmapLexer.tokenize( targetVerseString );
@@ -151,3 +150,46 @@ function extractAlignmentsFromTargetVerse_JSON(targetVerse: TUsfmVerse, sourceVe
     return alignments;
   }
   
+
+
+  /**
+ * merge alignments into target verse
+ */
+export function mergeInAlignments(wordBankWords: TWord[], verseAlignments: TWordAlignerAlignment[], targetVerseObjects: TUsfmVerse ): TWord[] | null {
+  const wordBank = wordBankWords.map(item => ({
+    ...item,
+    word: item.word || item.text,
+    occurrence: item.occurrence || item.occurrence,
+    occurrences: item.occurrences || item.occurrences,
+  }))
+  // remap sourceNgram:topWords, targetNgram:bottomWords,
+  const alignments_ = verseAlignments.map(item => ({
+    ...item,
+    topWords: item.sourceNgram.map(item => ({
+      strong: item.strong,
+      lemma: item.lemma,
+      morph: item.morph,
+      occurrence: item.occurrence,
+      occurrences: item.occurrences,
+      word: item.word || item.text,
+    })),
+    bottomWords: item.targetNgram.map(item => ({
+      ...item,
+      word: item.word || item.text
+    })),
+  }));
+
+
+
+  var verseString = verseObjectsToTargetString( targetVerseObjects.verseObjects );
+  var verseObjects: TWord[] | null = null;
+  try {
+    var verseObjects_test = word_aligner_default.merge( alignments_, wordBank, verseString, false);
+    if( Array.isArray(verseObjects_test) ){
+      verseObjects = verseObjects_test;
+    }
+  } catch (e) {
+    console.log("addAlignmentsToTargetVerseUsingMerge_JSON() - invalid alignment", e);
+  }
+  return verseObjects;
+}

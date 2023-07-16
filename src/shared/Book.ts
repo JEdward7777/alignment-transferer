@@ -101,4 +101,15 @@ export default class Book {
         if( !(chapter_num in this.chapters ) ) return null;
         return this.chapters[chapter_num].getVerseAlignmentStateBySelector( chapter_num, selector.slice(1) );
     }
+
+    updateAlignmentState( alignmentDialogResult: any, selector: string[] ): Book{
+        if( selector.length < 1 ) return this;
+        const chapter_num: number = parseInt( selector[0] );
+        if( !(chapter_num in this.chapters) ) return this;
+
+        const newChapter = this.chapters[chapter_num].updateAlignmentState( alignmentDialogResult, selector.slice(1) );
+
+        const newChapters = { ...this.chapters, [chapter_num]: newChapter };
+        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name} );
+    }
 }
