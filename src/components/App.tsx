@@ -23,7 +23,18 @@ interface AppState {
   alignerStatus: TAlignerStatus | null; 
 }
 
+
+const translateDict : {[key:string]:string}= {
+  "suggestions.refresh_suggestions": "Refresh suggestions.",
+  "suggestions.refresh": "Refresh",
+  "suggestions.accept_suggestions": "Accept all suggestions.",
+  "suggestions.accept": "Accept",
+  "suggestions.reject_suggestions": "Reject all suggestions.",
+  "suggestions.reject": "Reject",
+}
+
 function translate( key: string ): string{
+  if( key in translateDict ) return translateDict[key];
 
   console.log( `missed translate key: ${key}` );
   return ":-)";
@@ -52,7 +63,7 @@ const App: React.FC = () => {
     setState( {...state, doubleClickedVerse: newDoubleClickedVerse } );
   }
 
-  const setAlignerStatus = (newAlignerStatus: TAlignerStatus ) => {
+  const setAlignerStatus = (newAlignerStatus: TAlignerStatus | null ) => {
     setState( {...state, alignerStatus: newAlignerStatus } );
   }
 
@@ -196,6 +207,13 @@ const App: React.FC = () => {
   };
 
 
+  /**
+   * This function is for closing the alignment dialog when cancel is clicked.
+   */
+  const onCancelAlignment = () => {
+    setAlignerStatus(null);
+  }
+
   //This use effect responds when a double click in the list happens when it is on a verse to pop open the aliner dialog.
   useEffect(() =>{
     console.log( `Behold the double clicked verse is ${doubleClickedVerse}` );
@@ -210,7 +228,7 @@ const App: React.FC = () => {
           state,
           actions:{
             onAlignmentsChange: (results) => true, //TODO
-            cancelAlignment: () => {}, //TODO
+            cancelAlignment: onCancelAlignment, //TODO
             saveAlignment: (results) => {}, //TODO 
           },
         } );
