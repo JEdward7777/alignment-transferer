@@ -236,7 +236,7 @@ const App: React.FC = () => {
     //some reason can't call both, so combine them.
     //Setting aligner status to null closes the dialog.
     setState( {...state, 
-      alignerStatus: null, //null the alinger state for the dialog being closed.
+      alignerStatus: null, //null the aligner state for the dialog being closed.
       groupCollection: newGroupCollection, //replace the group collection so the change has been updated.
       doubleClickedVerse: null, //null the double clicked verse selection so we can double click the same verse again.
      } );
