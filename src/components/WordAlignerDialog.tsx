@@ -29,9 +29,9 @@ export interface TState{
 }
 
 interface TActions{
-  saveAlignment: ( results: TAlignerData | null ) => void;
+  saveAlignment: ( results: TWordAlignerAlignmentResult | null ) => void;
   cancelAlignment: () => void;
-  onAlignmentsChange: ( results: TAlignerData) => boolean;
+  onAlignmentsChange: ( results: TWordAlignerAlignmentResult) => boolean;
 }
 
 export interface TAlignerStatus{
@@ -63,7 +63,7 @@ export const WordAlignerDialog: React.FC<WordAlignerDialogProps> = ({
   height,
   translate,
 }) => {
-  const [alignmentChange, setAlignmentChange] = useState<TAlignerData|null>(null)
+  const [alignmentChange, setAlignmentChange] = useState<TWordAlignerAlignmentResult|null>(null)
   const [aligned, setAligned] = useState(false)
 
   /**
@@ -71,7 +71,7 @@ export const WordAlignerDialog: React.FC<WordAlignerDialogProps> = ({
    *   We also update the aligned status so that the UI can be updated dynamically
    * @param {object} results
    */
-  function onAlignmentChange(results: TAlignerData) {
+  function onAlignmentChange(results: TWordAlignerAlignmentResult) {
     const onAlignmentsChange = alignerStatus?.actions?.onAlignmentsChange;
     const alignmentComplete = onAlignmentsChange?.(results)
     setAlignmentChange(results) // save the most recent change

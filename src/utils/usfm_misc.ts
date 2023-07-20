@@ -1,9 +1,9 @@
 import {default as word_aligner_default} from "word-aligner";
 import _wordmapLexer, { Token } from "wordmap-lexer";
-import { TUsfmVerse, TWord, usfmHelpers, AlignmentHelpers, TAlignment, TAlignerData } from "word-aligner-rcl";
+import { TUsfmVerse, TWord, usfmHelpers, AlignmentHelpers, TAlignment, TAlignerData, TUsfmHeader } from "word-aligner-rcl";
 import { getOriginalLanguageListForVerseData, getAlignedWordListFromAlignments, updateAlignedWordsFromOriginalWordList } from 'word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';
 import { TWordAlignerAlignment, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-export function parseUsfmHeaders(headers_section: { tag: string, content: string }[]) {
+export function parseUsfmHeaders(headers_section: TUsfmHeader[]) {
     const parsed_headers: { [key: string]: string } = headers_section.reduce((acc: { [key: string]: string }, entry: { tag: string, content: string }) => {
         if (entry.tag && entry.content) {
             return { ...acc, [entry.tag]: entry.content };

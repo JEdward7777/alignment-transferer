@@ -1,7 +1,9 @@
 import Group from "./Group";
 import {parseUsfmHeaders} from "../utils/usfm_misc";
 import Verse from "./Verse";
-import { TState } from "@/components/WordAlignerDialog";
+import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
+import { TUsfmBook } from "word-aligner-rcl";
+import JSZip from "jszip";
 
 export default class GroupCollection {
     groups: { [key: string]: Group };
@@ -11,7 +13,7 @@ export default class GroupCollection {
     }
 
 
-    hasBookInGroup({ group_name, usfm_book }: {group_name: string; usfm_book: any } ): boolean{
+    hasBookInGroup({ group_name, usfm_book }: {group_name: string; usfm_book: TUsfmBook } ): boolean{
         if( !(group_name in this.groups) ) return false;
         const usfmHeaders = parseUsfmHeaders(usfm_book.headers);
         return this.groups[group_name].hasBook(usfmHeaders.h);
@@ -21,7 +23,7 @@ export default class GroupCollection {
      * This adds usfm to this group collection, but does so without
      * changing the original group collection in order to make it react compatible.
      */
-    addTargetUsfm({group_name, usfm_json }: {group_name: string, usfm_json: any}): GroupCollection{
+    addTargetUsfm({group_name, usfm_json }: {group_name: string, usfm_json: {[key:string]:TUsfmBook}}): GroupCollection{
         let newGroup: Group = this.groups[group_name] || new Group();
         newGroup = newGroup.addTargetUsfm( usfm_json );
         const newGroups = {...this.groups, [group_name]:newGroup};
@@ -34,7 +36,7 @@ export default class GroupCollection {
      * The results is returned without modifying the original object.
      * @param param0 
      */
-    addSourceUsfm( {usfm_json, isResourceSelected}:{usfm_json:any, isResourceSelected:( resourceKey: string[] )=>boolean} ):{newGroupCollection:GroupCollection, addedVerseCount:number, droppedVerseCount:number }{
+    addSourceUsfm( {usfm_json, isResourceSelected}:{usfm_json:{[key:string]:TUsfmBook}, isResourceSelected:( resourceKey: string[] )=>boolean} ):{newGroupCollection:GroupCollection, addedVerseCount:number, droppedVerseCount:number }{
         let totalAddedVerseCount = 0;
         let totalDroppedVerseCount = 0;
         const newGroups: {[key: string]: Group } = Object.fromEntries( Object.entries(this.groups).map( ([group_name,group]:[string,Group]):[group_name:string,newGroup:Group] => {
@@ -90,7 +92,7 @@ export default class GroupCollection {
      * @param alignmentDialogResult Returned by the alignment dialog
      * @param selector The same selector which is used by the previous functions
      */
-    updateAlignmentState( alignmentDialogResult: any, selector: string[] ): GroupCollection{
+    updateAlignmentState( alignmentDialogResult: TWordAlignerAlignmentResult, selector: string[] ): GroupCollection{
         //need to figure out if any group got hit and if so return a group collection which
         //has a modified version of it.
         if( selector.length < 1 ) throw new Error( "Group not selected" );
@@ -102,5 +104,20 @@ export default class GroupCollection {
             [selector[0]]: newGroup,
         }
         return new GroupCollection(newGroups);
+    }
+
+    /**
+     * This function saves the loaded USFM to the zip archive which is passed in.
+     * The resources saved are filtered by the isResourcePartiallySelected function.
+     * @param zip the zip object to save to
+     * @param isResourcePartiallySelected function to test if resource is partially selected
+     */
+    saveSelectedResourcesToUsfmZip( zip: JSZip, isResourcePartiallySelected: ( resourceKey: string[] ) => boolean ): void {
+        Object.entries(this.groups).forEach(([group_name,group])=>{
+            const groupKey = [group_name];
+            if( isResourcePartiallySelected( groupKey ) ){
+                group.saveSelectedResourcesToUsfmZip(zip.folder(group_name)!,groupKey,isResourcePartiallySelected);
+            }
+        });
     }
 }

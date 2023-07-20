@@ -47,6 +47,18 @@ declare module 'word-aligner-rcl'{
         verseObjects: TWord[];
     }
 
+    type TUsfmChapter = {[key:string]:TUsfmVerse};
+
+    interface TUsfmHeader{
+        tag: string;
+        content: string;
+    }
+
+    interface TUsfmBook{
+        headers: TUsfmHeader[];
+        chapters: {[key:string]:TUsfmChapter};
+    }
+
     interface SuggestingWordAlignerProps {
         style: {[key: string]: string };
         verseAlignments: TAlignments;
@@ -59,7 +71,7 @@ declare module 'word-aligner-rcl'{
         showPopover: (PopoverTitle: string, wordDetails: string, positionCoord: string, rawData: any) => void;
         lexicons: {};
         loadLexiconEntry: (arg:string)=>{[key:string]:string};
-        onChange: (results: TAlignerData) => void;
+        onChange: (results: TWordAlignerAlignmentResult) => void;
     }
     export class SuggestingWordAligner extends React.Component<SuggestingWordAlignerProps>{}
 

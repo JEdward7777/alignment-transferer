@@ -77,14 +77,12 @@ export default class Verse {
 
         if( this.targetVerse != null ){
             const newTargetVerse = mergeInAlignments( alignmentDialogResult.targetWords, alignmentDialogResult.verseAlignments, this.targetVerse );
-            console.log( "hi how are you?" );
 
             if( newTargetVerse != null ){
                 result = this.addTargetUsfm({verseObjects: newTargetVerse} );
             }
         }
-        
-        //return this.addTargetUsfm(newTargetVerse); TODO: need to figure out how to assign the result.
+
         return result;
     }
 }

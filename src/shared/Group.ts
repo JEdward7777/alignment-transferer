@@ -1,7 +1,9 @@
 import { is_number, parseUsfmHeaders } from "@/utils/usfm_misc";
 import Book from "./Book";
 import Verse from "./Verse";
-import { TState } from "@/components/WordAlignerDialog";
+import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
+import { TUsfmBook, TUsfmChapter } from "word-aligner-rcl";
+import JSZip from "jszip";
 
 export default class Group {
     books: { [key: string]: Book };
@@ -18,19 +20,19 @@ export default class Group {
      * This adds usfm to this group collection, but does so without
      * changing the original group collection in order to make it react compatible.
      */
-    addTargetUsfm( usfm_json: any ): Group {
+    addTargetUsfm( usfm_json: {[key:string]:TUsfmBook} ): Group {
         const newBooks: {[key:string]:Book} = {};
 
         Object.entries(usfm_json).forEach(([filename,usfm_book])=>{
-            const usfmHeaders = parseUsfmHeaders((usfm_book as any).headers);
-            const newBook = this.books[usfmHeaders.h] || new Book();
+            const usfmHeaders = parseUsfmHeaders(usfm_book.headers);
+            const newBook = this.books[usfmHeaders.h] || new Book( {chapters:{},filename:"",toc3Name:"",targetUsfmBook:null} );
             newBooks[usfmHeaders.h] = newBook.addTargetUsfm({filename,usfm_book,toc3Name:usfmHeaders.toc3});
         });
 
         return new Group({...this.books, ...newBooks});
     }
 
-    addSourceUsfm( {usfm_json: usfm_json,isResourceSelected,group_name}:{usfm_json:any,isResourceSelected:( resourceKey: string[] )=>boolean,group_name:string} ): {addedVerseCount:number,droppedVerseCount:number,newGroup:Group }{
+    addSourceUsfm( {usfm_json: usfm_json,isResourceSelected,group_name}:{usfm_json:{[key:string]:TUsfmBook},isResourceSelected:( resourceKey: string[] )=>boolean,group_name:string} ): {addedVerseCount:number,droppedVerseCount:number,newGroup:Group }{
         const modifiedBooks: {[key:string]:Book} = {};
 
         //rehash our books by their toc3.
@@ -42,7 +44,7 @@ export default class Group {
         let totalAddedVerseCount:number = 0;
         let totalDroppedVerseCount:number = 0;
         //Now run through each of the imported books and match them up.
-        Object.entries(usfm_json).forEach( ([filename,usfm_book]:[book_name:string,book_json:any]) => {
+        Object.entries(usfm_json).forEach( ([filename,usfm_book]:[book_name:string,book_json:TUsfmBook]) => {
             const parsedUsfmHeaders = parseUsfmHeaders(usfm_book.headers);
             
             if( parsedUsfmHeaders.toc3 in toc3_books ){
@@ -54,9 +56,9 @@ export default class Group {
             }else{
                 //count the verses in the book
                 let nonMatchedVerseCount = 0;
-                Object.entries(usfm_book.chapters).forEach(([chapter_num,chapter_json]) => {
+                Object.entries(usfm_book.chapters).forEach(([chapter_num,chapter_json]:[string,TUsfmChapter]) => {
                     if( is_number(chapter_num) ){
-                        Object.entries(chapter_json as any).forEach(([verse_num,verse_json]) => {
+                        Object.entries(chapter_json).forEach(([verse_num,verse_json]) => {
                             if( is_number( verse_num ) ){
                                 nonMatchedVerseCount += 1;
                             }
@@ -108,7 +110,7 @@ export default class Group {
         return this.books[selector[0]].getVerseAlignmentStateBySelector( selector.slice(1) );
     }
 
-    updateAlignmentState( alignmentDialogResult: any, selector: string[] ): Group{
+    updateAlignmentState( alignmentDialogResult: TWordAlignerAlignmentResult, selector: string[] ): Group{
 
         if( selector.length < 1 ) throw new Error( "Book not selected." );
         if( !(selector[0] in this.books ) ) throw new Error( "Book not found." );;
@@ -117,5 +119,24 @@ export default class Group {
 
         const newBooks = { ...this.books, [selector[0]]: newBook };
         return new Group( newBooks );
+    }
+
+     /**
+     * This function saves the loaded USFM to the zip archive which is passed in.
+     * The resources saved are filtered by the isResourcePartiallySelected function.
+     * @param folder the zip folder to save to
+     * @param groupKey the key for this group
+     * @param isResourcePartiallySelected function to test if resource is partially selected
+     */
+    saveSelectedResourcesToUsfmZip( folder: JSZip, groupKey: string[], isResourcePartiallySelected: ( resourceKey: string[] ) => boolean ): void {
+        //now need to iterate through the books which are partially selected and recurse.
+        Object.entries(this.books).forEach(([book_name,book])=>{
+            const bookKey = groupKey.concat([book_name]);
+            if( isResourcePartiallySelected( bookKey ) ){
+                //we don't have to create a sub folder for each book, because each book
+                //creates a new file.
+                book.saveSelectedResourcesToUsfmZip(folder,bookKey,isResourcePartiallySelected);
+            }
+        })
     }
 }

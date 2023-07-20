@@ -7,11 +7,12 @@ import Toolbar from './Toolbar';
 import GroupCollection from '../shared/GroupCollection'
 import {parseUsfmHeaders} from "../utils/usfm_misc";
 import useWindowDimensions from '../hooks/useWindowDimensions'
+import JSZip from "jszip";
 
 // @ts-ignore
 import usfm from 'usfm-js';
-import Verse from '@/shared/Verse';
-import { TAlignerStatus, TState, WordAlignerDialog } from './WordAlignerDialog';
+import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog } from './WordAlignerDialog';
+import { TUsfmBook } from 'word-aligner-rcl';
 
 
 
@@ -120,7 +121,7 @@ const App: React.FC = () => {
   const loadUsfmTargetCallback = async ( contents: { [key: string]: string } ) => {
     try{
       //load the usfm.
-      const usfm_json = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value,  { convertToInt: ['occurrence', 'occurrences'] })]));
+      const usfm_json : { [key: string]: TUsfmBook } = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value,  { convertToInt: ['occurrence', 'occurrences'] })]));
 
       const group_name = await promptTextInput( "What group name should the resources be loaded into?" );
 
@@ -184,6 +185,39 @@ const App: React.FC = () => {
     return false;
   }
 
+  /**
+   * Checks to see if a specific string array intercepts a given resource.
+   * The locations in the string are [group][book name][chapter num][verse num]
+   * The array only needs to be as long as the granularity.
+   * @param resourceKey A string array identifying resource at some granularity
+   * @returns true if the referenced resource is selected.
+   */
+  const isResourcePartiallySelected = ( resourceKey: string[] ):boolean => {
+    //iterate through the selected resources and return true on the first match.
+    //If the selected resource array is shorter but what is there matches then it is still
+    //a match.
+    selectionLoop: for( const selected of currentSelection ){
+
+      for( let i = 0; i < resourceKey.length || i < selected.length; ++i ){
+        //if we have matched this far and the iteration is longer then the selection
+        //key then it is a valid selection.  Return true.
+        if( i >= selected.length ) return true;
+
+        //if we have matched this far and the iteration is longer then the
+        //resource key then it is at least a partial selection.  Return true.
+        if( i >= resourceKey.length ) return true;
+
+        //if we found a key that is different, then just continue with the next
+        //selection option and see if it matches.
+        if( selected[i] != resourceKey[i] ) continue selectionLoop;
+      }
+      //if we finish the loop, then it is all selected.
+      return true;
+    }
+    return false;
+
+  }
+
   const loadSourceUsfmCallback = async ( contents: { [key: string]: string } ) => {
     try{
       //load the usfm.
@@ -222,7 +256,7 @@ const App: React.FC = () => {
    * This function gets called from the alignment dialog when save gets called.
    * @param result 
    */
-  const onSaveAlignment = ( result: null | any ) => {
+  const onSaveAlignment = ( result: null | TWordAlignerAlignmentResult ) => {
     let newGroupCollection = groupCollection;
     try{
       if( result != null && doubleClickedVerse != null ){
@@ -275,6 +309,35 @@ const App: React.FC = () => {
 
   },[doubleClickedVerse]);
 
+  const onSaveSelectedFiles = async () => {
+    console.log("Saving selected files");
+
+    //Make the zip filename be the current date
+    const fileName = `${new Date().toISOString()}.zip`;
+    const zip = new JSZip();
+
+    //now pass the structure to groupCollection so that it can populate it with the selected
+    //resources.
+    groupCollection.saveSelectedResourcesToUsfmZip(
+      zip, isResourcePartiallySelected
+    )
+
+    const zipFile = await zip.generateAsync({ type: "blob" });
+
+    // Check if the browser supports the `saveAs` function
+    if (typeof (window.navigator as any).msSaveBlob !== "undefined") {
+      // For IE and Edge browsers
+      (window.navigator as any).msSaveBlob(zipFile, fileName);
+    } else {
+      // For other browsers
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(zipFile);
+      link.download = fileName;
+      link.click();
+    }
+  
+  };
+
 
 
   const wordAlignmentScreenRatio = 0.7
@@ -294,7 +357,7 @@ const App: React.FC = () => {
       <header className="py-4 bg-gray-200">
         <nav className="container mx-auto">
           <ul className="flex space-x-4">
-            <FileMenu onAddTargetResource={loadUsfmTargetCallback} onAddSourceResource={loadSourceUsfmCallback} />
+            <FileMenu onAddTargetResource={loadUsfmTargetCallback} onAddSourceResource={loadSourceUsfmCallback} onSaveSelectedFiles={onSaveSelectedFiles} />
             <AboutMenu />
           </ul>
         </nav>

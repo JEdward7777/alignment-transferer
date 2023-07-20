@@ -1,18 +1,24 @@
 import { is_number } from "@/utils/usfm_misc";
 import Verse from "./Verse";
-import { TState } from "@/components/WordAlignerDialog";
+import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
+import { TUsfmChapter, TUsfmVerse } from "word-aligner-rcl";
 
 export default class Chapter {
     verses: { [key: number]: Verse };
 
-    constructor( newVerses: {[key:number]: Verse} = {} ) {
+    targetUsfm: TUsfmChapter | null = null;
+    sourceUsfm: TUsfmChapter | null = null;
+
+    constructor( newVerses: {[key:number]: Verse}, targetUsfm: TUsfmChapter | null, sourceUsfm: TUsfmChapter | null ) {
         this.verses = newVerses;
+        this.targetUsfm = targetUsfm;
+        this.sourceUsfm = sourceUsfm;
     }
 
-    addTargetUsfm( usfm_chapter: any ): Chapter{
+    addTargetUsfm( usfm_chapter: TUsfmChapter ): Chapter{
         const newVerses: {[key:number]:Verse} = {};
 
-        Object.entries(usfm_chapter).forEach( ([verse_number_string,usfm_verse]:[string,any]) => {
+        Object.entries(usfm_chapter).forEach( ([verse_number_string,usfm_verse]:[string,TUsfmVerse]) => {
             if( is_number(verse_number_string) ){
                 const verse_number_int = parseInt( verse_number_string );
                 const newVerse = this.verses[verse_number_int] || new Verse();
@@ -20,14 +26,14 @@ export default class Chapter {
             }
         });
 
-        return new Chapter( {...this.verses, ...newVerses} );
+        return new Chapter( {...this.verses, ...newVerses}, usfm_chapter, this.sourceUsfm );
     }
-    addSourceUsfm( {usfm_chapter, isResourceSelected, group_name, book_name, chapter_number}: {usfm_chapter:any, isResourceSelected:( resourceKey: string[] )=>boolean, group_name:string, book_name:string, chapter_number:string }):{addedVerseCount:number, droppedVerseCount:number, modifiedChapter:Chapter }{
+    addSourceUsfm( {usfm_chapter, isResourceSelected, group_name, book_name, chapter_number}: {usfm_chapter:TUsfmChapter, isResourceSelected:( resourceKey: string[] )=>boolean, group_name:string, book_name:string, chapter_number:string }):{addedVerseCount:number, droppedVerseCount:number, modifiedChapter:Chapter }{
         const modifiedVerses: {[key:number]:Verse} = {};
         let totalAddedVerseCount = 0;
         let totalDroppedVerseCount = 0;
 
-        Object.entries(usfm_chapter).forEach( ([verse_number_string,usfm_verse]:[string,any]) => {
+        Object.entries(usfm_chapter).forEach( ([verse_number_string,usfm_verse]:[string,TUsfmVerse]) => {
             if( is_number(verse_number_string) ){
                 const verse_number_int = parseInt( verse_number_string );
 
@@ -44,7 +50,7 @@ export default class Chapter {
         return {
             addedVerseCount:totalAddedVerseCount,
             droppedVerseCount:totalDroppedVerseCount,
-            modifiedChapter:new Chapter( {...this.verses, ...modifiedVerses} ),
+            modifiedChapter:new Chapter( {...this.verses, ...modifiedVerses}, this.targetUsfm, usfm_chapter ),
         }
     }
 
@@ -89,7 +95,7 @@ export default class Chapter {
         return this.verses[verse_num].getAlignmentState( chapter_num, verse_num );
     }
 
-    updateAlignmentState( alignmentDialogResult: any, selector: string[] ): Chapter{
+    updateAlignmentState( alignmentDialogResult: TWordAlignerAlignmentResult, selector: string[] ): Chapter{
         if( selector.length < 1 ) return this;
         const verse_num: number = parseInt( selector[0] );
         if( !(verse_num in this.verses) ) return this;
@@ -97,6 +103,9 @@ export default class Chapter {
         const newVerse = this.verses[verse_num].updateAlignmentState(alignmentDialogResult );
 
         const newVerses = { ...this.verses, [verse_num]: newVerse };
-        return new Chapter( newVerses );
+
+        const newTargetUsfm = { ...this.targetUsfm, [verse_num]: newVerse.targetVerse };
+
+        return new Chapter( newVerses, newTargetUsfm, this.sourceUsfm );
     }
 }
