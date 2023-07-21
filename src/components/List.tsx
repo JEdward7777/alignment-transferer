@@ -3,18 +3,20 @@ import 'react-data-grid/lib/styles.css';
 import DataGrid, {SelectColumn, } from 'react-data-grid';
 import type { Column, SortColumn, CellClickArgs,  } from 'react-data-grid';
 import GroupCollection from '@/shared/GroupCollection';
+import { isProvidedResourcePartiallySelected, isProvidedResourceSelected } from '@/utils/misc';
 
 
 
 interface TableProps {
   groupCollection: GroupCollection
   scope: string
+  currentSelection: string[][];
   setCurrentSelection: (newCurrentSelection: string[][] ) => void;
   onEntryDoubleClick: (currentTarget: string[] ) => void;
 };
 
 
-export default function List({ groupCollection, scope, setCurrentSelection, onEntryDoubleClick }: TableProps) {
+export default function List({ groupCollection, scope, currentSelection, setCurrentSelection, onEntryDoubleClick }: TableProps) {
 
   //need to slice and dice the resources so that it looks like we want it in the table.
   const [data, setData] = useState<{[key:string]:string}[]>([]);
@@ -32,15 +34,6 @@ export default function List({ groupCollection, scope, setCurrentSelection, onEn
 
   //This is used to be able to force the grid to redraw when we need to.
   const [key, setKey] = useState(0);
-
-  //tap into the setSelectionRows callback so we can harvest the information
-  const setSelectedRows = ( selectionsRowIds: ReadonlySet<number>): void => {
-    _setSelectedRows(selectionsRowIds);
-
-    //convert into resource string indexing
-    const selectionsStrings: string[][] = Array.from(selectionsRowIds).map( (id:number):string[] => reverseIndex[id] || [] ).filter((arr: string[]) => arr.length > 0);
-    setCurrentSelection(selectionsStrings);
-  }
 
   useEffect(() => {
     const newData: {[key:string]:string}[] = [];
@@ -104,6 +97,50 @@ export default function List({ groupCollection, scope, setCurrentSelection, onEn
   const onCellDoubleClick = ( target: CellClickArgs<{[key:string]:string}> ) => {
     onEntryDoubleClick( reverseIndex[parseInt(target.row.id)] );
   };
+
+  //tap into the setSelectionRows callback so we can harvest the information
+  const setSelectedRows = ( selectionsRowIds: ReadonlySet<number>): void => {
+    _setSelectedRows(selectionsRowIds);
+
+    //convert into resource string indexing
+    const selectionsStrings: string[][] = Array.from(selectionsRowIds).map( (id:number):string[] => reverseIndex[id] || [] ).filter((arr: string[]) => arr.length > 0);
+    setCurrentSelection(selectionsStrings);
+  }
+
+  //have a feedback so that if the currentSelection in the App changes that the proper rows in the list get
+  //selected.
+  useEffect(() => {
+    let somethingChanged = false;
+    let needToPushChangesBack = false;
+
+    //filter through the revereIndex and keep each entry which is selected.
+    //then map it to just the indexes.
+    const newSelectedRows = new Set(Object.entries(reverseIndex).filter( ( [rowId, resourceKey ]:[string, string[]] ):boolean =>{
+      //need to see if resourceKey is in the currentSelection.
+      if( isProvidedResourceSelected( currentSelection, resourceKey ) ) {
+        if( !selectedRows.has( parseInt(rowId) ) ) somethingChanged = true;
+        return true;
+      }
+      if( isProvidedResourcePartiallySelected( currentSelection, resourceKey ) ) {
+        //if we are partially selected, and not fully selected, we need to say something changed just because this needs to be flushed the other way.
+        needToPushChangesBack = true;
+        somethingChanged = true;
+      }
+      if( selectedRows.has( parseInt(rowId) ) ) somethingChanged = true;
+      return false;
+    }).map( ( [rowId, resourceKey ]:[string, string[]] ) => {
+      return parseInt(rowId);
+    }));
+
+    if( somethingChanged ){
+      if( needToPushChangesBack ){
+        setSelectedRows( newSelectedRows );
+      }else{
+        _setSelectedRows( newSelectedRows );
+      }
+    }
+
+  }, [currentSelection,reverseIndex]);
 
   return <DataGrid 
     key={key}

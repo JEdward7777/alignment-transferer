@@ -13,6 +13,7 @@ import JSZip from "jszip";
 import usfm from 'usfm-js';
 import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog } from './WordAlignerDialog';
 import { TUsfmBook } from 'word-aligner-rcl';
+import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
 
 
 
@@ -162,27 +163,7 @@ const App: React.FC = () => {
    * @returns true if the referenced resource is selected.
    */
   const isResourceSelected = ( resourceKey: string[] ):boolean => {
-    //iterate through the selected resources and return true on the first match.
-    //If the selected resource array is shorter but what is there matches then it is still
-    //a match.
-    selectionLoop: for( const selected of currentSelection ){
-      //if the resourceKey is shorter then the selected then it doesn't count
-      //a chapter isn't selected if a verse is selected from it even if it is all the verses selected from it.
-      if( selected.length > resourceKey.length ) continue selectionLoop;
-
-      for( let i = 0; i < resourceKey.length; ++i ){
-        //if we have matched this far and the iteration is longer then the selection
-        //key then it is a valid selection.  Return true.
-        if( i >= selected.length ) return true;
-
-        //if we found a key that is different, then just continue with the next
-        //selection option and see if it matches.
-        if( selected[i] != resourceKey[i] ) continue selectionLoop;
-      }
-      //if we finish the loop, then it is all selected.
-      return true;
-    }
-    return false;
+    return isProvidedResourceSelected( currentSelection, resourceKey );
   }
 
   /**
@@ -193,29 +174,7 @@ const App: React.FC = () => {
    * @returns true if the referenced resource is selected.
    */
   const isResourcePartiallySelected = ( resourceKey: string[] ):boolean => {
-    //iterate through the selected resources and return true on the first match.
-    //If the selected resource array is shorter but what is there matches then it is still
-    //a match.
-    selectionLoop: for( const selected of currentSelection ){
-
-      for( let i = 0; i < resourceKey.length || i < selected.length; ++i ){
-        //if we have matched this far and the iteration is longer then the selection
-        //key then it is a valid selection.  Return true.
-        if( i >= selected.length ) return true;
-
-        //if we have matched this far and the iteration is longer then the
-        //resource key then it is at least a partial selection.  Return true.
-        if( i >= resourceKey.length ) return true;
-
-        //if we found a key that is different, then just continue with the next
-        //selection option and see if it matches.
-        if( selected[i] != resourceKey[i] ) continue selectionLoop;
-      }
-      //if we finish the loop, then it is all selected.
-      return true;
-    }
-    return false;
-
+    return isProvidedResourcePartiallySelected( currentSelection, resourceKey );
   }
 
   const loadSourceUsfmCallback = async ( contents: { [key: string]: string } ) => {
@@ -372,7 +331,7 @@ const App: React.FC = () => {
         </nav>
       </header>
 
-      <List groupCollection={groupCollection} scope={scope} setCurrentSelection={setCurrentSelection} onEntryDoubleClick={setDoubleClickedVerse}/>
+      <List groupCollection={groupCollection} scope={scope} setCurrentSelection={setCurrentSelection} onEntryDoubleClick={setDoubleClickedVerse} currentSelection={currentSelection}/>
 
       <WordAlignerDialog
         alignerStatus={alignerStatus}
