@@ -179,6 +179,11 @@ const App: React.FC = () => {
 
   const loadSourceUsfmCallback = async ( contents: { [key: string]: string } ) => {
     try{
+      //ask the user to make a selection if no resources are selected.
+      if( currentSelection.length == 0 ) {
+        throw new Error("No resources selected to add to.");
+      }
+
       //load the usfm.
       const usfm_json = Object.fromEntries( Object.entries(contents).map(([key,value]) => [key, usfm.toJSON(value, { convertToInt: ['occurrence','occurrences'] })]));
 
@@ -267,6 +272,13 @@ const App: React.FC = () => {
   },[doubleClickedVerse]);
 
   const onSaveSelectedFiles = async () => {
+    //ask the user to make a selection if no resources are selected.
+    if( currentSelection.length == 0 ) {
+      await showMessage( "No resources selected" );
+      return;
+    }
+
+
     console.log("Saving selected files");
 
     //Make the zip filename be the current date
@@ -300,7 +312,14 @@ const App: React.FC = () => {
    *
    * @returns {void}
    */
-  const onRemoveSelectedResources = () => {
+  const onRemoveSelectedResources = async () => {
+    //ask the user to make a selection if no resources are selected.
+    if( currentSelection.length == 0 ) {
+      await showMessage( "No resources selected" );
+      return;
+    }
+
+
     const newGroupCollection: GroupCollection = groupCollection.removeSelectedResources( {isResourcePartiallySelected, isResourceSelected} );
 
     setState( {...state, 
