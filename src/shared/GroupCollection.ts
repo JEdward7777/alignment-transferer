@@ -133,13 +133,8 @@ export default class GroupCollection {
      */
     removeSelectedResources({ isResourcePartiallySelected, isResourceSelected }: { isResourcePartiallySelected: (resourceKey: string[]) => boolean, isResourceSelected: (resourceKey: string[]) => boolean }): GroupCollection {
 
-        console.log( `outside isResourcePartiallySelected is ${isResourcePartiallySelected}` );
-
         //first map the groups through the recursive removal and then filter out the empty ones.
         const newGroups: {[key: string]: Group } = Object.fromEntries( Object.entries(this.groups).map( ([group_name,group]:[string,Group]):[string,Group] => {
-            console.log( `inside isResourcePartiallySelected is ${isResourcePartiallySelected}` );
-
-
             const groupKey = [group_name];
             //shortcut pass the items which are not touched.
             if( !isResourcePartiallySelected( groupKey ) ) return [group_name,group];
@@ -151,4 +146,73 @@ export default class GroupCollection {
 
         return new GroupCollection(newGroups);
     }
+
+
+    /**
+     * This function renames all groups under the given name.
+     * The lhs has the the precedence in case of a collision.
+     * @param {string} newGroupName - The new name for the group.
+     * @return {GroupCollection} - The updated group collection.
+     */
+    mergeGroupsUnderName(newGroupName: string): GroupCollection {
+        //take care of the case of no groups.
+        if( Object.keys(this.groups).length === 0 ) return this;
+
+        const mergedGroup: Group = Object.values(this.groups)
+           .reduce( (mergedGroup: Group, group: Group):Group => mergedGroup.mergeWith( group ) );
+
+        return new GroupCollection( {[newGroupName]: mergedGroup} );
+    }
+
+    /**
+     * This function merges this GroupCollection with another GroupCollection
+     * The lhs has the the precedence in case of a collision.
+     * @param {GroupCollection} otherGroupCollection - The other GroupCollection.
+     * @return {GroupCollection} - The updated group collection.
+     */
+    mergeWith( otherGroupCollection: GroupCollection ): GroupCollection {
+        const mergedGroups: {[key: string]: Group } = {...this.groups};
+        Object.entries(otherGroupCollection.groups).forEach(([group_name,group]:[string,Group])=>{
+            if( group_name in mergedGroups ){
+                mergedGroups[group_name] = mergedGroups[group_name].mergeWith( group );
+            }else{
+                mergedGroups[group_name] = group;
+            }
+        });
+        return new GroupCollection(mergedGroups);
+    }
+
+    /**
+     * Renames selected groups.
+     *
+     * @param {Object} params - The parameters for renaming the groups.
+     * @param {string} params.newGroupName - The new name for the group.
+     * @param {function} params.isResourcePartiallySelected - A function that determines if a resource is partially selected.
+     * @return {GroupCollection} - The updated group collection.
+     */
+    renameSelectedGroups({
+        newGroupName,
+        isResourcePartiallySelected,
+        isResourceSelected,
+    }: {
+        newGroupName: string;
+        isResourcePartiallySelected: (resourceKey: string[]) => boolean;
+        isResourceSelected: (resourceKey: string[]) => boolean;
+    }) {
+
+        //so first split stuff apart by doing a delete and a reverse delete.
+        //So define the reverse selection functions to be able to do the reverse delete.
+        const oppositeIsResourceSelected = ( resourceKey: string[] ) => !isResourcePartiallySelected( resourceKey );
+        const oppositeIsResourcePartiallySelected = ( resourceKey: string[] ) => !isResourceSelected( resourceKey );
+
+        const withoutSelected = this.removeSelectedResources({ isResourcePartiallySelected, isResourceSelected });
+        const withSelected    = this.removeSelectedResources({ isResourcePartiallySelected:oppositeIsResourcePartiallySelected, isResourceSelected:oppositeIsResourceSelected});
+
+        const renamedSelected = withSelected.mergeGroupsUnderName( newGroupName );
+
+        const result = withoutSelected.mergeWith( renamedSelected );
+
+        return result;
+    }
+
 }

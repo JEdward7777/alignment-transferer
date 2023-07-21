@@ -136,4 +136,25 @@ export default class Chapter {
 
         return new Chapter( newVerses, newTargetUsfm, this.sourceUsfm );
     }
+
+    /**
+     * This function merges this chapter with another chapter.
+     * lhs takes priority
+     * @param chapter the chapter to merge.
+     * @return the merged chapter
+     */
+    mergeWith( chapter: Chapter ): Chapter {
+        const newVerses = { ...this.verses };
+        const newTargetUsfm = (this.targetUsfm==null)?{}:{ ...this.targetUsfm};
+        const newSourceUsfm = (this.sourceUsfm==null)?{}:{ ...this.sourceUsfm};
+        Object.entries(chapter.verses).forEach(([verse_number,verse]:[string,Verse])=>{
+            const verse_number_int = parseInt(verse_number);
+            if( !(verse_number in this.verses) ){
+                newVerses[verse_number_int] = verse;
+                if( verse.targetVerse != null ) newTargetUsfm[verse_number_int] = verse.targetVerse;
+                if( verse.sourceVerse != null ) newSourceUsfm[verse_number_int] = verse.sourceVerse;
+            }
+        });
+        return new Chapter( newVerses, newTargetUsfm, newSourceUsfm );
+    }
 }

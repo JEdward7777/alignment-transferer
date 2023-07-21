@@ -132,7 +132,12 @@ export default function List({ groupCollection, scope, currentSelection, setCurr
       return parseInt(rowId);
     }));
 
+    //Only update the selected rows if something is different
+    //to prevent an event loop.
     if( somethingChanged ){
+      //setSelectedRows pushes changes back out to App
+      //so don't call it unless there was a partial selection which
+      //needs to be cleared up.
       if( needToPushChangesBack ){
         setSelectedRows( newSelectedRows );
       }else{

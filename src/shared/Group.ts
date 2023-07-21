@@ -162,5 +162,22 @@ export default class Group {
         }));
     
         return new Group( newBooks );
-    }       
+    }
+
+    /**
+     * This function merges this group with the group passed in.
+     * @param group the group to merge with
+     * @returns the new group
+     */
+    mergeWith( group: Group ): Group {
+        const newBooks = { ...this.books };
+        Object.entries(group.books).forEach(([book_name,book]:[string,Book])=>{
+            if( book_name in newBooks ){
+                newBooks[book_name] = newBooks[book_name].mergeWith( book );
+            }else{
+                newBooks[book_name] = book;
+            }
+        });
+        return new Group( newBooks );
+    }
 }

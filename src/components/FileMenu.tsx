@@ -7,9 +7,10 @@ interface FileMenuProps {
   onAddSourceResource: (contents: { [key: string]: string } ) => void;
   onSaveSelectedFiles: () => void;
   onRemoveSelectedResources: () => void;
+  onRenameSelectedGroups: () => void;
 }
 
-const FileMenu: React.FC<FileMenuProps> = ({ onAddTargetResource, onAddSourceResource, onSaveSelectedFiles, onRemoveSelectedResources }) => {
+const FileMenu: React.FC<FileMenuProps> = ({ onAddTargetResource, onAddSourceResource, onSaveSelectedFiles, onRemoveSelectedResources, onRenameSelectedGroups }) => {
 
 
   return (
@@ -38,6 +39,11 @@ const FileMenu: React.FC<FileMenuProps> = ({ onAddTargetResource, onAddSourceRes
         <li>
           <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={onRemoveSelectedResources}>
             Remove Selected
+          </a>
+        </li>
+        <li>
+          <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={onRenameSelectedGroups}>
+            Rename Selected Groups
           </a>
         </li>
       </ul>

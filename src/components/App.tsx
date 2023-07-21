@@ -237,8 +237,6 @@ const App: React.FC = () => {
 
   //This use effect responds when a double click in the list happens when it is on a verse to pop open the aliner dialog.
   useEffect(() =>{
-    console.log( `Behold the double clicked verse is ${doubleClickedVerse}` );
-
     if( doubleClickedVerse != null ){
       //const verse: Verse | null = groupCollection.getVerseBySelector(doubleClickedVerse);
 
@@ -297,6 +295,11 @@ const App: React.FC = () => {
   
   };
 
+  /**
+   * Removes the selected resources from the group collection and updates the state.
+   *
+   * @returns {void}
+   */
   const onRemoveSelectedResources = () => {
     const newGroupCollection: GroupCollection = groupCollection.removeSelectedResources( {isResourcePartiallySelected, isResourceSelected} );
 
@@ -306,6 +309,21 @@ const App: React.FC = () => {
      } );
   }
 
+  /**
+   * This function will rename all the selected groups.
+   */
+  const  onRenameSelectedGroups = async () => {
+    try{
+      //ask the user what the new group name should be.
+      const newGroupName = await promptTextInput( "What do you want to call the new group?" );
+
+      const newGroupCollection = groupCollection.renameSelectedGroups( {newGroupName, isResourcePartiallySelected, isResourceSelected } );
+
+      setGroupCollection( newGroupCollection );
+    } catch( error ){
+      //user declined
+    }
+  }
 
 
   const wordAlignmentScreenRatio = 0.7
@@ -325,7 +343,12 @@ const App: React.FC = () => {
       <header className="py-4 bg-gray-200">
         <nav className="container mx-auto">
           <ul className="flex space-x-4">
-            <FileMenu onAddTargetResource={loadUsfmTargetCallback} onAddSourceResource={loadSourceUsfmCallback} onSaveSelectedFiles={onSaveSelectedFiles} onRemoveSelectedResources={onRemoveSelectedResources} />
+            <FileMenu onAddTargetResource={loadUsfmTargetCallback} 
+            onAddSourceResource={loadSourceUsfmCallback} 
+            onSaveSelectedFiles={onSaveSelectedFiles} 
+            onRemoveSelectedResources={onRemoveSelectedResources}
+            onRenameSelectedGroups={onRenameSelectedGroups} 
+            />
             <AboutMenu />
           </ul>
         </nav>

@@ -204,4 +204,36 @@ export default class Book {
 
         return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook } );
     }
+
+    /**
+     * This function merges this book with another book.
+     * This is most will happen when the same book is in two different
+     * groups and they are renamed to the same thing.
+     * lhs takes priority
+     * @param {Book} book - the book to merge with
+     * @returns a new book object
+     */
+    mergeWith( book: Book ): Book {
+        const newChapters = { ...this.chapters };
+        //fall over to the other other book's usfm for the target usfm
+        //so we can have book headers.
+        let newTargetUsfmBook : TUsfmBook | null = (this.targetUsfmBook !== null)?this.targetUsfmBook:book.targetUsfmBook;
+        Object.entries(book.chapters).forEach(([chapter_number,chapter]:[string,Chapter])=>{
+            const chapter_number_int = parseInt(chapter_number);
+            if( chapter_number in newChapters ){
+                const mergedChapter = newChapters[chapter_number_int].mergeWith( chapter );
+                newChapters[chapter_number_int] = mergedChapter;
+                //snag the merged usfm
+                if( newTargetUsfmBook != null && mergedChapter.targetUsfm != null ){
+                    newTargetUsfmBook.chapters[chapter_number_int] = mergedChapter.targetUsfm!;
+                }
+            }else{
+                newChapters[chapter_number_int] = chapter;
+                if( newTargetUsfmBook != null && chapter.targetUsfm != null ){
+                    newTargetUsfmBook.chapters[chapter_number_int] = chapter.targetUsfm!;
+                }
+            }
+        });
+        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook } );
+    }
 }
