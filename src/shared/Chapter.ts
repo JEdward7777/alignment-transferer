@@ -108,4 +108,32 @@ export default class Chapter {
 
         return new Chapter( newVerses, newTargetUsfm, this.sourceUsfm );
     }
+
+     /**
+     * This function will remove resources which are
+     * selected or partially remove partially selected resources.
+     * @param bookKey the key for this book
+     * @param isResourcePartiallySelected function to test if resource is partially selected
+     * @param isResourceSelected function to test if resource is selected
+     * @returns the new book.
+     */
+    removeSelectedResources( bookKey: string[], { isResourcePartiallySelected, isResourceSelected }: { isResourcePartiallySelected: (resourceKey: string[]) => boolean, isResourceSelected: (resourceKey: string[]) => boolean } ): Chapter {
+        //console.log( `bookKey outside is ${bookKey}` );
+        const newVerses = Object.fromEntries(Object.entries(this.verses).filter(([verse_number,verse]:[string,Verse])=>{
+            //console.log( `bookKey inside is ${bookKey}` );
+            //only keep the verses which are not selected.
+            const isSelected = isResourceSelected( bookKey.concat([verse_number]) );
+            return !isSelected;
+        }));
+
+        //also trip the USFM chapter
+        const newTargetUsfm = this.targetUsfm == null?null:Object.fromEntries(Object.entries(this.targetUsfm).filter(([verse_number,verse]:[string,TUsfmVerse]):boolean=>{
+            //only keep the verses which are not selected or is other stuff.
+            if( !is_number(verse_number) ) return true;
+            const isSelected = isResourceSelected( bookKey.concat([verse_number]) );
+            return !isSelected;
+        }));
+
+        return new Chapter( newVerses, newTargetUsfm, this.sourceUsfm );
+    }
 }

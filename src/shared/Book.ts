@@ -163,4 +163,45 @@ export default class Book {
         //now write it tot he zip folder.
         folder.file(`${this.filename}`, newTargetUsfmString);
     }
+
+    /**
+     * This function will remove the resources which are selected or partially remove partially selected resources.
+     * @param bookKey the key for this book
+     * @param isResourcePartiallySelected function to test if resource is partially selected
+     * @param isResourceSelected function to test if resource is selected
+     * @returns a new book object
+     */
+    removeSelectedResources( bookKey: string[], { isResourcePartiallySelected, isResourceSelected }: { isResourcePartiallySelected: (resourceKey: string[]) => boolean, isResourceSelected: (resourceKey: string[]) => boolean } ): Book{
+        const newChapters = Object.fromEntries(Object.entries(this.chapters).map(([chapter_number,chapter]:[string,Chapter]):[string,Chapter]=>{
+            const chapterKey = bookKey.concat([chapter_number]);
+            if( isResourcePartiallySelected( chapterKey ) ){
+                return [chapter_number,chapter.removeSelectedResources( chapterKey, {isResourcePartiallySelected, isResourceSelected} )];
+            }else{
+                return [chapter_number,chapter];
+            }
+        }).filter(([chapter_number,chapter])=>{
+            return Object.keys(chapter.verses).length > 0;
+        }));
+
+        //now also filter the usfm information.
+        const newTargetUsfmBook = deepClone( this.targetUsfmBook )!;
+
+        Object.entries(newTargetUsfmBook.chapters).forEach(([chapter_number,chapter]:[string,TUsfmChapter])=>{
+            const chapterKey = bookKey.concat([chapter_number]);
+            //just pass the front or other sections which are not numbers.
+            if( is_number(chapter_number) ){
+                //if it isn't partially selected we can just pass it.
+                if( isResourcePartiallySelected( chapterKey ) ){
+                    //Check to see if the partially selected chapter should be whittled or removed.
+                    if( chapter_number in newChapters ){
+                        newTargetUsfmBook.chapters[chapter_number] = newChapters[chapter_number].targetUsfm!;
+                    }else{
+                        delete newTargetUsfmBook.chapters[chapter_number];
+                    }
+                }                
+            }
+        })
+
+        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook } );
+    }
 }

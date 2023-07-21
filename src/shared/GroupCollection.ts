@@ -116,8 +116,39 @@ export default class GroupCollection {
         Object.entries(this.groups).forEach(([group_name,group])=>{
             const groupKey = [group_name];
             if( isResourcePartiallySelected( groupKey ) ){
-                group.saveSelectedResourcesToUsfmZip(zip.folder(group_name)!,groupKey,isResourcePartiallySelected);
+                //filter the group_name so it doesn't contain any invalid characters for a filename.
+                const groupFilename = group_name.replace(/[^a-zA-Z0-9 ]/g, "");
+                group.saveSelectedResourcesToUsfmZip(zip.folder(groupFilename)!,groupKey,isResourcePartiallySelected);
             }
         });
+    }
+
+
+    /**
+     * This function will remove resources which are
+     * selected or partially remove partially selected resources.
+     * @param isResourcePartiallySelected function to test if resource is partially selected
+     * @param isResourceSelected function to test if resource is selected
+     * @returns the new GroupCollection.
+     */
+    removeSelectedResources({ isResourcePartiallySelected, isResourceSelected }: { isResourcePartiallySelected: (resourceKey: string[]) => boolean, isResourceSelected: (resourceKey: string[]) => boolean }): GroupCollection {
+
+        console.log( `outside isResourcePartiallySelected is ${isResourcePartiallySelected}` );
+
+        //first map the groups through the recursive removal and then filter out the empty ones.
+        const newGroups: {[key: string]: Group } = Object.fromEntries( Object.entries(this.groups).map( ([group_name,group]:[string,Group]):[string,Group] => {
+            console.log( `inside isResourcePartiallySelected is ${isResourcePartiallySelected}` );
+
+
+            const groupKey = [group_name];
+            //shortcut pass the items which are not touched.
+            if( !isResourcePartiallySelected( groupKey ) ) return [group_name,group];
+            //now recurse on the rest.
+            return [group_name,group.removeSelectedResources( groupKey, {isResourcePartiallySelected, isResourceSelected} )];
+        }).filter( ([group_name,group]:[string,Group])=>{
+            return Object.keys(group.books).length > 0;
+        }));
+
+        return new GroupCollection(newGroups);
     }
 }

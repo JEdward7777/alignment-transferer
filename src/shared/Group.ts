@@ -139,4 +139,28 @@ export default class Group {
             }
         })
     }
+
+     /**
+     * This function will remove resources which are
+     * selected or partially remove partially selected resources.
+     * @param groupKey the key for this group
+     * @param isResourcePartiallySelected function to test if resource is partially selected
+     * @param isResourceSelected function to test if resource is selected
+     * @returns the new group.
+     */
+    removeSelectedResources( groupKey: string[], { isResourcePartiallySelected, isResourceSelected }: { isResourcePartiallySelected: (resourceKey: string[]) => boolean, isResourceSelected: (resourceKey: string[]) => boolean } ): Group {
+        const newBooks = Object.fromEntries(Object.entries(this.books).map(([book_name,book]:[string,Book]):[string,Book]=>{
+            const bookKey = groupKey.concat([book_name]);
+            if( isResourcePartiallySelected( bookKey ) ){
+                //process the partially selected books.
+                return [book_name,book.removeSelectedResources( bookKey, {isResourceSelected, isResourcePartiallySelected})];
+            }else{
+                return [book_name,book];
+            }
+        }).filter(([book_name,book]:[string,Book])=>{
+            return Object.keys(book.chapters).length > 0;
+        }));
+    
+        return new Group( newBooks );
+    }       
 }

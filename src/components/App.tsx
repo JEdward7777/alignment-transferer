@@ -338,6 +338,15 @@ const App: React.FC = () => {
   
   };
 
+  const onRemoveSelectedResources = () => {
+    const newGroupCollection: GroupCollection = groupCollection.removeSelectedResources( {isResourcePartiallySelected, isResourceSelected} );
+
+    setState( {...state, 
+      groupCollection: newGroupCollection, //replace the group collection so the change has been updated.
+      currentSelection: [], //clear the current selection because all those items should be gone.
+     } );
+  }
+
 
 
   const wordAlignmentScreenRatio = 0.7
@@ -357,7 +366,7 @@ const App: React.FC = () => {
       <header className="py-4 bg-gray-200">
         <nav className="container mx-auto">
           <ul className="flex space-x-4">
-            <FileMenu onAddTargetResource={loadUsfmTargetCallback} onAddSourceResource={loadSourceUsfmCallback} onSaveSelectedFiles={onSaveSelectedFiles} />
+            <FileMenu onAddTargetResource={loadUsfmTargetCallback} onAddSourceResource={loadSourceUsfmCallback} onSaveSelectedFiles={onSaveSelectedFiles} onRemoveSelectedResources={onRemoveSelectedResources} />
             <AboutMenu />
           </ul>
         </nav>
