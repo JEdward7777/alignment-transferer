@@ -240,6 +240,23 @@ const App: React.FC = () => {
      } );
   }
 
+  /**
+   * This function implements the onAlignmentsChange callback for the alignment dialog.
+   * @param results The results from the alignment dialog
+   * @returns true - if the alignment is completed
+   */
+  const onAlignmentsChange = ( results: TWordAlignerAlignmentResult ): boolean => {
+    let result = false;
+    //To be able to test if the alignment is complete, we do a temporary update and then
+    //check the results what their state is.
+    if( doubleClickedVerse != null ){
+      const tempGroupCollection = groupCollection.updateAlignmentState( results, doubleClickedVerse );
+      const state: TState | null = tempGroupCollection.getVerseAlignmentStateBySelector(doubleClickedVerse);
+      if( state?.aligned ) result = true;
+    }
+    return result;
+  }
+
   //This use effect responds when a double click in the list happens when it is on a verse to pop open the aliner dialog.
   useEffect(() =>{
     if( doubleClickedVerse != null ){
@@ -252,7 +269,7 @@ const App: React.FC = () => {
           setAlignerStatus({
             state,
             actions: {
-              onAlignmentsChange: (results) => true,
+              onAlignmentsChange: onAlignmentsChange,
               cancelAlignment: onCancelAlignment,
               saveAlignment: onSaveAlignment,
             },

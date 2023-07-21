@@ -89,6 +89,8 @@ declare module 'word-aligner-rcl'{
         export function getWordListFromVerseObjects( verseObjects: TWord[] ): Token[];
         export function markTargetWordsAsDisabledIfAlreadyUsedForAlignments(targetWordList: Token[], alignments: TAlignment[]):TWord[];
         export function addAlignmentsToVerseUSFM( wordBankWords: TWord[], verseAlignments: any, targetVerseText: string ): string;
+        //I see that Algnments is not spelled correctly, it is this way in the library.
+        export function areAlgnmentsComplete( targetWords: TWord[], verseAlignments: TAlignment[] ): boolean;
     }
 }
 

@@ -3,7 +3,8 @@ import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTarge
 import { AlignmentHelpers, TUsfmVerse } from "word-aligner-rcl";
 
 enum VerseState {
-    Unpaired = 'unpaired',
+    NoSource = "no-source",
+    NoTarget = "no-target",
     Unaligned = 'unaligned',
     AlignedTrain = 'aligned-train',
     AlignedTest = 'aligned-test',
@@ -11,23 +12,49 @@ enum VerseState {
 
 export default class Verse {
 
-    state: VerseState = VerseState.Unpaired;
+    state: VerseState = VerseState.NoTarget;
     sourceVerse: TUsfmVerse | null = null;
     targetVerse: TUsfmVerse | null = null;
+
+    reservedForTesting: boolean = false;
 
     clone(): Verse{
         const result: Verse = new Verse();
         result.sourceVerse = this.sourceVerse;
         result.targetVerse = this.targetVerse;
         result.state = this.state;
+        result.reservedForTesting = this.reservedForTesting;
         return result;
     }
 
+    
+    /**
+     * Computes what the state of this verse should be.
+     * @return {VerseState} - The state of this verse.
+     */
+    computeState(): VerseState{
+        if( this.sourceVerse == null ) return VerseState.NoSource;
+        if( this.targetVerse == null ) return VerseState.NoTarget;
+        const wordAlignerData = parseUsfmToWordAlignerData_JSON( this.targetVerse, this.sourceVerse );
+        const alignmentComputed = AlignmentHelpers.areAlgnmentsComplete(wordAlignerData.targetWords, wordAlignerData.verseAlignments);
+        if( !alignmentComputed ) return VerseState.Unaligned;
+        if( this.reservedForTesting ) return VerseState.AlignedTest;
+        return VerseState.AlignedTrain;
+    }
 
+
+    /**
+     * Adds a target USFM verse to the current verse and returns a new 
+     * Verse object with the updated target verse.
+     *
+     * @param {TUsfmVerse} usfm_verse - The target USFM verse to be added.
+     * @return {Verse} - A new Verse object with the updated target verse.
+     */
     addTargetUsfm( usfm_verse: TUsfmVerse ): Verse{
         const newVerse: Verse = this.clone();
         newVerse.targetVerse = usfm_verse;
 
+        newVerse.state = newVerse.computeState();
 
         return newVerse;
     }
@@ -36,8 +63,7 @@ export default class Verse {
         const newVerse: Verse = this.clone();
         newVerse.sourceVerse = usfm_verse;
 
-        //TODO: need to check the aligned state to know the proper state to set here.
-        newVerse.state = VerseState.Unaligned;
+        newVerse.state = newVerse.computeState();
         return newVerse;
     }
 
