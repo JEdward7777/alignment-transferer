@@ -389,18 +389,24 @@ const App: React.FC = () => {
     setIsTraining(event.target.checked);
   }
 
-  /**
-   * This gets called at a regular interval as long as isTraining
-   * is true and trainStepCounter keeps changing.
-   */
-  const onTrainingInterval = () => {
+
+  //Update the trainingStateOutput each time trainStepCounter changes
+  //with a useEffect
+  useEffect(() => {
     setState({
       ...state,
-      trainStepCounter: trainStepCounter+1,
       trainingStatusOutput: "Training " + trainStepCounter,
     })
-  }
+  }, [trainStepCounter])
 
+  /**
+   * This makes trainStepCounter count up at a regular interval
+   * so that anything that needs to happen once an interval
+   * can have a useEffect on trainStepCounter.
+   */
+  const onTrainingInterval = () => {
+    setState({ ...state, trainStepCounter: trainStepCounter+1 })
+  }
   useEffect(() => {
     if (isTraining) setTimeout(onTrainingInterval, 1000);
   }, [isTraining, trainStepCounter]);
