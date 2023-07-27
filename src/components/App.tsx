@@ -389,6 +389,22 @@ const App: React.FC = () => {
     setIsTraining(event.target.checked);
   }
 
+  /**
+   * This gets called at a regular interval as long as isTraining
+   * is true and trainStepCounter keeps changing.
+   */
+  const onTrainingInterval = () => {
+    setState({
+      ...state,
+      trainStepCounter: trainStepCounter+1,
+      trainingStatusOutput: "Training " + trainStepCounter,
+    })
+  }
+
+  useEffect(() => {
+    if (isTraining) setTimeout(onTrainingInterval, 1000);
+  }, [isTraining, trainStepCounter]);
+
 
   const wordAlignmentScreenRatio = 0.7
   const wordAlignmentMaxHeightPx = 1000
