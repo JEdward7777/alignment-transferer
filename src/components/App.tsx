@@ -14,10 +14,7 @@ import usfm from 'usfm-js';
 import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog } from './WordAlignerDialog';
 import { TUsfmBook } from 'word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
-import { MorphJLBoostWordMap } from 'wordmapbooster/dist/boostwordmap_tools';
-
-
-
+import WordMapBoosterWrapper from '@/shared/WordMapBoosterWrapper';
 
 
 interface AppState {
@@ -61,13 +58,13 @@ const App: React.FC = () => {
     trainingStatusOutput: "Hi.",
    });
 
-  //This is a separate state to prevent reseting isTraining when
+  //This is a separate state to prevent resetting isTraining when
   //setTrainingStepCounter is incremented.
   const [trainStepCounter, setTrainStepCounter] = useState(0);
 
   const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus, isTraining, trainingStatusOutput } = state;
 
-  const alignmentPredictor = useRef( new MorphJLBoostWordMap({ targetNgramLength: 5, warnings: false, forceOccurrenceOrder:false }) );
+  const alignmentPredictor = useRef( new WordMapBoosterWrapper() );
 
   const setGroupCollection = (newGroupCollection: GroupCollection ) => {
     setState( { ...state, groupCollection: newGroupCollection } );
@@ -411,6 +408,15 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isTraining) setTimeout(onTrainingInterval, 1000);
   }, [isTraining, trainStepCounter]);
+
+
+
+  //Use useEffect to call train on alignmentPredictor each time trainStepCounter changes
+  useEffect(() => {
+    if( isTraining ){
+      alignmentPredictor.train( state, setState );
+    }
+  }, [trainStepCounter])
 
 
   const wordAlignmentScreenRatio = 0.7
