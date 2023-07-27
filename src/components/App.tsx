@@ -406,11 +406,9 @@ const App: React.FC = () => {
    * can have a useEffect on trainStepCounter.
    */
   const onTrainingInterval = () => {
-    console.log( `In onTrainingInterval isTraining: ${isTraining} and in state ${state.isTraining}` );
     if(isTraining) setTrainStepCounter( trainStepCounter + 1 );
   }
   useEffect(() => {
-    console.log( `isTraining: ${isTraining}` );
     if (isTraining) setTimeout(onTrainingInterval, 1000);
   }, [isTraining, trainStepCounter]);
 
