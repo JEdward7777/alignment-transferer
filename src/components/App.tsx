@@ -28,7 +28,6 @@ interface AppState {
   alignerStatus: TAlignerStatus | null; //This gets set to pop up the word aligner dialog.
 
   isTraining: boolean; //This is true when the training checkbox is checked
-  trainStepCounter: number; //This counts up while the JLBoostWordMap is training
   trainingStatusOutput: string; //Setting this shows up on the toolbar and lets the training have a place to give live output status.
 }
 
@@ -58,12 +57,15 @@ const App: React.FC = () => {
     currentSelection:[], 
     doubleClickedVerse:null, 
     alignerStatus:null, 
-    trainStepCounter:0, 
     isTraining: false,
     trainingStatusOutput: "Hi.",
    });
 
-  const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus, trainStepCounter, isTraining, trainingStatusOutput } = state;
+  //This is a separate state to prevent reseting isTraining when
+  //setTrainingStepCounter is incremented.
+  const [trainStepCounter, setTrainStepCounter] = useState(0);
+
+  const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus, isTraining, trainingStatusOutput } = state;
 
   const alignmentPredictor = useRef( new MorphJLBoostWordMap({ targetNgramLength: 5, warnings: false, forceOccurrenceOrder:false }) );
 
@@ -389,7 +391,6 @@ const App: React.FC = () => {
     setIsTraining(event.target.checked);
   }
 
-
   //Update the trainingStateOutput each time trainStepCounter changes
   //with a useEffect
   useEffect(() => {
@@ -405,9 +406,11 @@ const App: React.FC = () => {
    * can have a useEffect on trainStepCounter.
    */
   const onTrainingInterval = () => {
-    setState({ ...state, trainStepCounter: trainStepCounter+1 })
+    console.log( `In onTrainingInterval isTraining: ${isTraining} and in state ${state.isTraining}` );
+    if(isTraining) setTrainStepCounter( trainStepCounter + 1 );
   }
   useEffect(() => {
+    console.log( `isTraining: ${isTraining}` );
     if (isTraining) setTimeout(onTrainingInterval, 1000);
   }, [isTraining, trainStepCounter]);
 
