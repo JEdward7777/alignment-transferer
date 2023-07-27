@@ -29,9 +29,14 @@ const Toolbar: React.FC<ToolbarProps> = ( {onAddResource, onAddSourceResource, o
                     Add Source To Selected
                 </label>
             </div>
-            <input type="checkbox" id="trainingCheckbox" checked={isTraining} onChange={onToggleTraining} />
-            <label htmlFor="trainingCheckbox" className="bg-white border border-black text-black font-bold py-2 px-4 rounded cursor-pointer">
-                Training {trainingStatusOutput}
+            <div className="flex items-center justify-center gap-2">
+                <label htmlFor="trainingCheckbox" className="text-black bg-transparent py-2 rounded cursor-text">
+                    Live Training
+                </label>
+                <input type="checkbox" id="trainingCheckbox"checked={isTraining} onChange={onToggleTraining} />
+            </div>
+            <label className="w-40 bg-white border border-black text-black py-2 px-4 rounded cursor-text">
+                {trainingStatusOutput}
             </label>
         </div>
     );
