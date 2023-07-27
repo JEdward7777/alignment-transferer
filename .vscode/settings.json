@@ -1,7 +1,11 @@
 {
     "cSpell.words": [
+        "Algnments",
+        "boostwordmap",
         "Ngram",
         "strongs",
-        "unmerge"
-    ]
+        "unmerge",
+        "wordmapbooster"
+    ],
+    "typescript.tsserver.experimental.enableProjectDiagnostics": true
 }

@@ -12,7 +12,8 @@
         "type": "chrome",
         "request": "launch",
         "url": "http://localhost:3003",
-        "webRoot": "${workspaceFolder}"
+        "webRoot": "${workspaceFolder}",
+        "timeout": 30000
       },
       
       {

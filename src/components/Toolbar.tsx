@@ -8,11 +8,14 @@ interface ToolbarProps {
     onAddResource: (contents: { [key: string]: string } ) => void;
     onAddSourceResource: (contents: { [key: string]: string } ) => void;
     onScopeChange: (selectedScope: string) => void;
+    isTraining: boolean;
+    onToggleTraining: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    trainingStatusOutput: string;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ( {onAddResource, onAddSourceResource, onScopeChange} ) => {
+const Toolbar: React.FC<ToolbarProps> = ( {onAddResource, onAddSourceResource, onScopeChange, isTraining, onToggleTraining, trainingStatusOutput} ) => {
     return (
-        <div className="flex justify-center gap-4">
+        <div className="flex items-center justify-center gap-4">
             <ScopeSelector onScopeChange={onScopeChange} />
             <div>
                 <input type="file" onChange={loadFilesFromInputOnChangeTogether(onAddResource)} accept=".usfm" className="hidden" id="file-input" multiple />
@@ -26,6 +29,10 @@ const Toolbar: React.FC<ToolbarProps> = ( {onAddResource, onAddSourceResource, o
                     Add Source To Selected
                 </label>
             </div>
+            <input type="checkbox" id="trainingCheckbox" checked={isTraining} onChange={onToggleTraining} />
+            <label htmlFor="trainingCheckbox" className="bg-white border border-black text-black font-bold py-2 px-4 rounded cursor-pointer">
+                Training {trainingStatusOutput}
+            </label>
         </div>
     );
 };

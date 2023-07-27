@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FileMenu from './FileMenu';
 import AboutMenu from './AboutMenu';
 import List from './List';
@@ -14,15 +14,22 @@ import usfm from 'usfm-js';
 import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog } from './WordAlignerDialog';
 import { TUsfmBook } from 'word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
+import { MorphJLBoostWordMap } from 'wordmapbooster/dist/boostwordmap_tools';
+
+
 
 
 
 interface AppState {
-  groupCollection: GroupCollection;
-  scope: string;
-  currentSelection: string[][];
-  doubleClickedVerse: string[] | null;
-  alignerStatus: TAlignerStatus | null; 
+  groupCollection: GroupCollection; //This contains all the verse data loaded in a hierarchical structure of Groups->Books->Chapter->Verses
+  scope: string;  //This is Book, Group, Chapter or Verse.  It changes how the list is shown.
+  currentSelection: string[][]; //This contains a collection of the references to all the things selected in the list.
+  doubleClickedVerse: string[] | null; //This gets set when a verse is double clicked.
+  alignerStatus: TAlignerStatus | null; //This gets set to pop up the word aligner dialog.
+
+  isTraining: boolean; //This is true when the training checkbox is checked
+  trainStepCounter: number; //This counts up while the JLBoostWordMap is training
+  trainingStatusOutput: string; //Setting this shows up on the toolbar and lets the training have a place to give live output status.
 }
 
 
@@ -45,9 +52,20 @@ function translate( key: string ): string{
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({ groupCollection: new GroupCollection(), scope: "Book", currentSelection:[], doubleClickedVerse:null, alignerStatus:null });
+  const [state, setState] = useState<AppState>({ 
+    groupCollection: new GroupCollection(), 
+    scope: "Book", 
+    currentSelection:[], 
+    doubleClickedVerse:null, 
+    alignerStatus:null, 
+    trainStepCounter:0, 
+    isTraining: false,
+    trainingStatusOutput: "Hi.",
+   });
 
-  const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus } = state;
+  const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus, trainStepCounter, isTraining, trainingStatusOutput } = state;
+
+  const alignmentPredictor = useRef( new MorphJLBoostWordMap({ targetNgramLength: 5, warnings: false, forceOccurrenceOrder:false }) );
 
   const setGroupCollection = (newGroupCollection: GroupCollection ) => {
     setState( { ...state, groupCollection: newGroupCollection } );
@@ -67,6 +85,9 @@ const App: React.FC = () => {
 
   const setAlignerStatus = (newAlignerStatus: TAlignerStatus | null ) => {
     setState( {...state, alignerStatus: newAlignerStatus } );
+  }
+  const setIsTraining = (newIsTraining: boolean) => {
+    setState( {...state, isTraining: newIsTraining } );
   }
 
   // const stringResourceKey = (resourceKey: string[]): string => {
@@ -361,6 +382,13 @@ const App: React.FC = () => {
     }
   }
 
+  /**
+   * This function is called when the training checkbox is clicked.
+   */
+  const onToggleTraining = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIsTraining(event.target.checked);
+  }
+
 
   const wordAlignmentScreenRatio = 0.7
   const wordAlignmentMaxHeightPx = 1000
@@ -402,7 +430,9 @@ const App: React.FC = () => {
         <Toolbar onAddResource={loadUsfmTargetCallback} 
                  onAddSourceResource={loadSourceUsfmCallback}
                  onScopeChange={onScopeChange}
-                />
+                 isTraining={isTraining}
+                 onToggleTraining={onToggleTraining}
+                 trainingStatusOutput={trainingStatusOutput} />
       </footer>
     </div>
   );
