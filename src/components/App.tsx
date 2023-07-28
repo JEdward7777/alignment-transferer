@@ -85,6 +85,11 @@ const App: React.FC = () => {
     setState( {...state, isTraining: newIsTraining } );
   }
 
+
+  function startTraining(){
+    console.log("start training");
+  }
+
   // const stringResourceKey = (resourceKey: string[]): string => {
   //   const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
   //   return sanitizedKey.join('->');
