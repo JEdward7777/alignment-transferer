@@ -49,7 +49,7 @@ function translate( key: string ): string{
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({ 
-    groupCollection: new GroupCollection(), 
+    groupCollection: new GroupCollection({},0), 
     scope: "Book", 
     currentSelection:[], 
     doubleClickedVerse:null, 
@@ -90,12 +90,17 @@ const App: React.FC = () => {
     console.log("start training");
   }
 
-  //When the istraining gets set call the startTraining function
+  //When the isTraining gets set call the startTraining function
   useEffect( () => {
     if( isTraining ) {
       startTraining();
     }
   }, [isTraining] );
+
+  //Put a status indication in the toolbar of the current groupCollection instance count
+  useEffect( () => {
+    setState( {...state, trainingStatusOutput:`GroupNum ${groupCollection.instanceCount}`} );
+  }, [groupCollection.instanceCount] );
 
   // const stringResourceKey = (resourceKey: string[]): string => {
   //   const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));

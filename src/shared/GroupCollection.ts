@@ -7,9 +7,11 @@ import JSZip from "jszip";
 
 export default class GroupCollection {
     groups: { [key: string]: Group };
+    instanceCount: number = 0;
 
-    constructor( newGroups?: {[key:string]: Group }) {
-        this.groups = newGroups || {};
+    constructor( newGroups: {[key:string]: Group}, newInstanceCount: number ) {
+        this.groups = newGroups;
+        this.instanceCount = newInstanceCount;
     }
 
 
@@ -27,7 +29,7 @@ export default class GroupCollection {
         let newGroup: Group = this.groups[group_name] || new Group();
         newGroup = newGroup.addTargetUsfm( usfm_json );
         const newGroups = {...this.groups, [group_name]:newGroup};
-        return new GroupCollection(newGroups);
+        return new GroupCollection(newGroups, this.instanceCount + 1);
     }
 
     /**
@@ -47,7 +49,7 @@ export default class GroupCollection {
         }));
         return {addedVerseCount:totalAddedVerseCount, 
             droppedVerseCount: totalDroppedVerseCount, 
-            newGroupCollection: new GroupCollection(newGroups) };
+            newGroupCollection: new GroupCollection(newGroups, this.instanceCount + 1) };
     }
 
     static getListHeaders( scope:string ):string[]{
@@ -103,7 +105,7 @@ export default class GroupCollection {
         const newGroups = { ...this.groups,
             [selector[0]]: newGroup,
         }
-        return new GroupCollection(newGroups);
+        return new GroupCollection(newGroups, this.instanceCount + 1);
     }
 
     /**
@@ -144,7 +146,7 @@ export default class GroupCollection {
             return Object.keys(group.books).length > 0;
         }));
 
-        return new GroupCollection(newGroups);
+        return new GroupCollection(newGroups, this.instanceCount + 1);
     }
 
 
@@ -161,7 +163,7 @@ export default class GroupCollection {
         const mergedGroup: Group = Object.values(this.groups)
            .reduce( (mergedGroup: Group, group: Group):Group => mergedGroup.mergeWith( group ) );
 
-        return new GroupCollection( {[newGroupName]: mergedGroup} );
+        return new GroupCollection( {[newGroupName]: mergedGroup}, this.instanceCount + 1 );
     }
 
     /**
@@ -179,7 +181,7 @@ export default class GroupCollection {
                 mergedGroups[group_name] = group;
             }
         });
-        return new GroupCollection(mergedGroups);
+        return new GroupCollection(mergedGroups, this.instanceCount + 1);
     }
 
     /**
