@@ -28,7 +28,8 @@ interface AppState {
 interface TrainingState{
   isTrainingEnabled: boolean; //This is true when the training checkbox is checked
   trainingStatusOutput: string; //Setting this shows up on the toolbar and lets the training have a place to give live output status.
-  lastUsedInstanceCount: number; //This lets us know if something has changed since last training by comparing it to groupCollection.instanceCount
+  lastTrainedInstanceCount: number; //This lets us know if something has changed since last training by comparing it to groupCollection.instanceCount
+  currentTrainingInstanceCount: number; //This keeps track of what is currently training so that when it finishes lastTrainedInstanceCount can be set.
 }
 
 const translateDict : {[key:string]:string}= {
@@ -60,7 +61,8 @@ const App: React.FC = () => {
   const [trainingState, setTrainingState] = useState<TrainingState>({
     isTrainingEnabled: false,
     trainingStatusOutput: "",
-    lastUsedInstanceCount: -1,
+    lastTrainedInstanceCount: -1,
+    currentTrainingInstanceCount: -1,
   })
   const alignmentWorkerRef = useRef<Worker | null>(null);
 
@@ -94,9 +96,10 @@ const App: React.FC = () => {
 
   function startTraining(){
     //make sure that lastUsedInstanceCount isn't still the same as groupCollection.instanceCount
-    if( trainingState.lastUsedInstanceCount !== groupCollection.instanceCount ){
+    if( trainingState.lastTrainedInstanceCount !== groupCollection.instanceCount ){
       console.log("start training");
-      setTrainingState( {...trainingState, lastUsedInstanceCount: groupCollection.instanceCount } );
+
+      setTrainingState( {...trainingState, currentTrainingInstanceCount: groupCollection.instanceCount } );
 
 
       if( alignmentWorkerRef.current === null ){
@@ -106,6 +109,8 @@ const App: React.FC = () => {
           console.log( `alignment worker message: ${event.data}` );
           alignmentWorkerRef.current?.terminate();
           alignmentWorkerRef.current = null;
+
+          setTrainingState( {...trainingState, lastTrainedInstanceCount: trainingState.currentTrainingInstanceCount } );
         })
 
 
@@ -118,11 +123,20 @@ const App: React.FC = () => {
       console.log( "information not changed" );
     }
   }
+  function stopTraining(){
+    if( alignmentWorkerRef.current !== null ){
+      alignmentWorkerRef.current.terminate();
+      alignmentWorkerRef.current = null;
+      console.log( "Alignment stopped" );
+    }
+  }
 
   //When the isTraining gets set call the startTraining function
   useEffect( () => {
     if( trainingState.isTrainingEnabled ) {
       startTraining();
+    }else{
+      stopTraining();
     }
   }, [trainingState.isTrainingEnabled] );
 
