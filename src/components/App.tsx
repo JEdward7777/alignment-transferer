@@ -58,10 +58,6 @@ const App: React.FC = () => {
     trainingStatusOutput: "Hi.",
    });
 
-  //This is a separate state to prevent resetting isTraining when
-  //setTrainingStepCounter is incremented.
-  const [trainStepCounter, setTrainStepCounter] = useState(0);
-
   const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus, isTraining, trainingStatusOutput } = state;
 
   const alignmentPredictor = useRef( new WordMapBoosterWrapper() );
@@ -387,36 +383,6 @@ const App: React.FC = () => {
   const onToggleTraining = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIsTraining(event.target.checked);
   }
-
-  //Update the trainingStateOutput each time trainStepCounter changes
-  //with a useEffect
-  useEffect(() => {
-    setState({
-      ...state,
-      trainingStatusOutput: "Training " + trainStepCounter,
-    })
-  }, [trainStepCounter])
-
-  /**
-   * This makes trainStepCounter count up at a regular interval
-   * so that anything that needs to happen once an interval
-   * can have a useEffect on trainStepCounter.
-   */
-  const onTrainingInterval = () => {
-    if(isTraining) setTrainStepCounter( trainStepCounter + 1 );
-  }
-  useEffect(() => {
-    if (isTraining) setTimeout(onTrainingInterval, 1000);
-  }, [isTraining, trainStepCounter]);
-
-
-
-  //Use useEffect to call train on alignmentPredictor each time trainStepCounter changes
-  useEffect(() => {
-    if( isTraining ){
-      alignmentPredictor.train( state, setState );
-    }
-  }, [trainStepCounter])
 
 
   const wordAlignmentScreenRatio = 0.7

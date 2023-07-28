@@ -3,7 +3,7 @@ import GroupCollection from "./GroupCollection";
 
 /**
  * This class wraps the interactions with MorphJLBoostWordMap
- * or other wordmapping tool.
+ * or other word mapping tool.
  */
 export default class WordMapBoosterWrapper {
     wordMapper : MorphJLBoostWordMap;
