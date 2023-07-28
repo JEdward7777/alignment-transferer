@@ -123,11 +123,10 @@ const App: React.FC = () => {
 
     //make sure that lastUsedInstanceCount isn't still the same as groupCollection.instanceCount
     if( trainingStateRef.current.lastTrainedInstanceCount !== stateRef.current.groupCollection.instanceCount ){
-      console.log("start training");
-
-      setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
-
       if( alignmentWorkerRef.current === null ){
+        console.log(`start training for ${stateRef.current.groupCollection.instanceCount}`);
+        setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
+
         alignmentWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
 
         alignmentWorkerRef.current.addEventListener('message', (event) => {
@@ -140,7 +139,6 @@ const App: React.FC = () => {
           //start the training again if the number changed
           startTraining();
         })
-
 
         alignmentWorkerRef.current.postMessage('start');
           
@@ -166,11 +164,11 @@ const App: React.FC = () => {
     }else{
       stopTraining();
     }
-  }, [trainingState.isTrainingEnabled] );
+  }, [trainingState.isTrainingEnabled,groupCollection.instanceCount] );
 
   //Put a status indication in the toolbar of the current groupCollection instance count
   useEffect( () => {
-    setTrainingState( {...trainingState, trainingStatusOutput:`GroupNum ${groupCollection.instanceCount}`} );
+    setTrainingState( {...trainingStateRef.current, trainingStatusOutput:`GroupNum ${groupCollection.instanceCount}`} );
   }, [groupCollection.instanceCount] );
 
   // const stringResourceKey = (resourceKey: string[]): string => {
