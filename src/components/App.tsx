@@ -89,23 +89,23 @@ const App: React.FC = () => {
 
 
   const setGroupCollection = (newGroupCollection: GroupCollection ) => {
-    setState( { ...state, groupCollection: newGroupCollection } );
+    setState( { ...stateRef.current, groupCollection: newGroupCollection } );
   }
 
   const onScopeChange = (newScope: string) =>{
-    setState( { ...state, scope: newScope } );
+    setState( { ...stateRef.current, scope: newScope } );
   }
 
   const setCurrentSelection = (newCurrentSelection: string[][] ) => {
-    setState( { ...state, currentSelection: newCurrentSelection } );
+    setState( { ...stateRef.current, currentSelection: newCurrentSelection } );
   }
 
   const setDoubleClickedVerse = (newDoubleClickedVerse: string[] | null ) => {
-    setState( {...state, doubleClickedVerse: newDoubleClickedVerse } );
+    setState( {...stateRef.current, doubleClickedVerse: newDoubleClickedVerse } );
   }
 
   const setAlignerStatus = (newAlignerStatus: TAlignerStatus | null ) => {
-    setState( {...state, alignerStatus: newAlignerStatus } );
+    setState( {...stateRef.current, alignerStatus: newAlignerStatus } );
   }
   const setIsTrainingEnabled = (newIsTrainingEnabled: boolean) => {
     setTrainingState( {...trainingState, isTrainingEnabled: newIsTrainingEnabled } );
@@ -312,7 +312,7 @@ const App: React.FC = () => {
    */
   const onCancelAlignment = () => {
     setState({
-      ...state,
+      ...stateRef.current,
       alignerStatus: null,
       doubleClickedVerse: null,
     });
@@ -335,7 +335,7 @@ const App: React.FC = () => {
     }
     //some reason can't call both, so combine them.
     //Setting aligner status to null closes the dialog.
-    setState( {...state, 
+    setState( {...stateRef.current, 
       alignerStatus: null, //null the aligner state for the dialog being closed.
       groupCollection: newGroupCollection, //replace the group collection so the change has been updated.
       doubleClickedVerse: null, //null the double clicked verse selection so we can double click the same verse again.
@@ -441,7 +441,7 @@ const App: React.FC = () => {
 
     const newGroupCollection: GroupCollection = groupCollection.removeSelectedResources( {isResourcePartiallySelected, isResourceSelected} );
 
-    setState( {...state, 
+    setState( {...stateRef.current, 
       groupCollection: newGroupCollection, //replace the group collection so the change has been updated.
       currentSelection: [], //clear the current selection because all those items should be gone.
      } );
