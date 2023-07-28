@@ -90,6 +90,13 @@ const App: React.FC = () => {
     console.log("start training");
   }
 
+  //When the istraining gets set call the startTraining function
+  useEffect( () => {
+    if( isTraining ) {
+      startTraining();
+    }
+  }, [isTraining] );
+
   // const stringResourceKey = (resourceKey: string[]): string => {
   //   const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
   //   return sanitizedKey.join('->');
