@@ -23,11 +23,13 @@ interface AppState {
   currentSelection: string[][]; //This contains a collection of the references to all the things selected in the list.
   doubleClickedVerse: string[] | null; //This gets set when a verse is double clicked.
   alignerStatus: TAlignerStatus | null; //This gets set to pop up the word aligner dialog.
-
-  isTraining: boolean; //This is true when the training checkbox is checked
-  trainingStatusOutput: string; //Setting this shows up on the toolbar and lets the training have a place to give live output status.
 }
 
+interface TrainingState{
+  isTrainingEnabled: boolean; //This is true when the training checkbox is checked
+  trainingStatusOutput: string; //Setting this shows up on the toolbar and lets the training have a place to give live output status.
+  lastUsedInstanceCount: number; //This lets us know if something has changed since last training by comparing it to groupCollection.instanceCount
+}
 
 const translateDict : {[key:string]:string}= {
   "suggestions.refresh_suggestions": "Refresh suggestions.",
@@ -48,17 +50,20 @@ function translate( key: string ): string{
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({ 
-    groupCollection: new GroupCollection({},0), 
-    scope: "Book", 
-    currentSelection:[], 
-    doubleClickedVerse:null, 
-    alignerStatus:null, 
-    isTraining: false,
-    trainingStatusOutput: "Hi.",
-   });
+  const [state, setState] = useState<AppState>({
+    groupCollection: new GroupCollection({}, 0),
+    scope: "Book",
+    currentSelection: [],
+    doubleClickedVerse: null,
+    alignerStatus: null,
+  });
+  const [trainingState, setTrainingState] = useState<TrainingState>({
+    isTrainingEnabled: false,
+    trainingStatusOutput: "",
+    isTrainingGoing: false,
+  })
 
-  const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus, isTraining, trainingStatusOutput } = state;
+  const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus } = state;
 
   const alignmentPredictor = useRef( new WordMapBoosterWrapper() );
 
@@ -81,25 +86,31 @@ const App: React.FC = () => {
   const setAlignerStatus = (newAlignerStatus: TAlignerStatus | null ) => {
     setState( {...state, alignerStatus: newAlignerStatus } );
   }
-  const setIsTraining = (newIsTraining: boolean) => {
-    setState( {...state, isTraining: newIsTraining } );
+  const setIsTrainingEnabled = (newIsTrainingEnabled: boolean) => {
+    setTrainingState( {...trainingState, isTrainingEnabled: newIsTrainingEnabled } );
   }
 
 
   function startTraining(){
-    console.log("start training");
+    //make sure that lastUsedInstanceCount isn't still the same as groupCollection.instanceCount
+    if( trainingState.lastUsedInstanceCount !== groupCollection.instanceCount ){
+      console.log("start training");
+      setTrainingState( {...trainingState, lastUsedInstanceCount: groupCollection.instanceCount } );
+    }else{
+      console.log( "information not changed" );
+    }
   }
 
   //When the isTraining gets set call the startTraining function
   useEffect( () => {
-    if( isTraining ) {
+    if( trainingState.isTrainingEnabled ) {
       startTraining();
     }
-  }, [isTraining] );
+  }, [trainingState.isTrainingEnabled] );
 
   //Put a status indication in the toolbar of the current groupCollection instance count
   useEffect( () => {
-    setState( {...state, trainingStatusOutput:`GroupNum ${groupCollection.instanceCount}`} );
+    setTrainingState( {...trainingState, trainingStatusOutput:`GroupNum ${groupCollection.instanceCount}`} );
   }, [groupCollection.instanceCount] );
 
   // const stringResourceKey = (resourceKey: string[]): string => {
@@ -398,7 +409,7 @@ const App: React.FC = () => {
    * This function is called when the training checkbox is clicked.
    */
   const onToggleTraining = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setIsTraining(event.target.checked);
+    setIsTrainingEnabled(event.target.checked);
   }
 
 
@@ -442,9 +453,9 @@ const App: React.FC = () => {
         <Toolbar onAddResource={loadUsfmTargetCallback} 
                  onAddSourceResource={loadSourceUsfmCallback}
                  onScopeChange={onScopeChange}
-                 isTraining={isTraining}
+                 isTrainingEnabled={trainingState.isTrainingEnabled}
                  onToggleTraining={onToggleTraining}
-                 trainingStatusOutput={trainingStatusOutput} />
+                 trainingStatusOutput={trainingState.trainingStatusOutput} />
       </footer>
     </div>
   );

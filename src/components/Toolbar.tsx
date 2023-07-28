@@ -8,12 +8,12 @@ interface ToolbarProps {
     onAddResource: (contents: { [key: string]: string } ) => void;
     onAddSourceResource: (contents: { [key: string]: string } ) => void;
     onScopeChange: (selectedScope: string) => void;
-    isTraining: boolean;
+    isTrainingEnabled: boolean;
     onToggleTraining: (event: React.ChangeEvent<HTMLInputElement>) => void;
     trainingStatusOutput: string;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ( {onAddResource, onAddSourceResource, onScopeChange, isTraining, onToggleTraining, trainingStatusOutput} ) => {
+const Toolbar: React.FC<ToolbarProps> = ( {onAddResource, onAddSourceResource, onScopeChange, isTrainingEnabled, onToggleTraining, trainingStatusOutput} ) => {
     return (
         <div className="flex items-center justify-center gap-4">
             <ScopeSelector onScopeChange={onScopeChange} />
@@ -33,7 +33,7 @@ const Toolbar: React.FC<ToolbarProps> = ( {onAddResource, onAddSourceResource, o
                 <label htmlFor="trainingCheckbox" className="text-black bg-transparent py-2 rounded cursor-text">
                     Live Training
                 </label>
-                <input type="checkbox" id="trainingCheckbox"checked={isTraining} onChange={onToggleTraining} />
+                <input type="checkbox" id="trainingCheckbox"checked={isTrainingEnabled} onChange={onToggleTraining} />
             </div>
             <label className="w-40 bg-white border border-black text-black py-2 px-4 rounded cursor-text">
                 {trainingStatusOutput}
