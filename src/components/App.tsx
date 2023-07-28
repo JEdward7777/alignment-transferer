@@ -51,24 +51,42 @@ function translate( key: string ): string{
 
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>({
+  const [state, _setState] = useState<AppState>({
     groupCollection: new GroupCollection({}, 0),
     scope: "Book",
     currentSelection: [],
     doubleClickedVerse: null,
     alignerStatus: null,
   });
-  const [trainingState, setTrainingState] = useState<TrainingState>({
+  //also hold the state in a ref so that callbacks can get the up-to-date information.
+  //https://stackoverflow.com/a/60643670
+  const stateRef = useRef<AppState>(state);
+  function setState( newState: AppState ) {
+    stateRef.current = newState;
+    _setState( newState );
+  }
+
+  const [trainingState, _setTrainingState] = useState<TrainingState>({
     isTrainingEnabled: false,
     trainingStatusOutput: "",
     lastTrainedInstanceCount: -1,
     currentTrainingInstanceCount: -1,
   })
+  const trainingStateRef = useRef<TrainingState>(trainingState);
+  function setTrainingState( newState: TrainingState ) {
+    trainingStateRef.current = newState;
+    _setTrainingState( newState );
+  }
+
+
   const alignmentWorkerRef = useRef<Worker | null>(null);
 
   const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus } = state;
 
   const alignmentPredictor = useRef( new WordMapBoosterWrapper() );
+
+
+
 
   const setGroupCollection = (newGroupCollection: GroupCollection ) => {
     setState( { ...state, groupCollection: newGroupCollection } );
@@ -93,14 +111,21 @@ const App: React.FC = () => {
     setTrainingState( {...trainingState, isTrainingEnabled: newIsTrainingEnabled } );
   }
 
-
   function startTraining(){
+
+    //Use the Refs such as trainingStateRef instead of trainingState
+    //because in the callback the objects are stale because they were
+    //captured from a previous invocation of the function and don't
+    //have later versions of the function in which things have been updated.
+    //startTraining itself gets called from within the callback so itself is
+    //a callback needs to use the Refs.
+    //https://stackoverflow.com/a/60643670
+
     //make sure that lastUsedInstanceCount isn't still the same as groupCollection.instanceCount
-    if( trainingState.lastTrainedInstanceCount !== groupCollection.instanceCount ){
+    if( trainingStateRef.current.lastTrainedInstanceCount !== stateRef.current.groupCollection.instanceCount ){
       console.log("start training");
 
-      setTrainingState( {...trainingState, currentTrainingInstanceCount: groupCollection.instanceCount } );
-
+      setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
 
       if( alignmentWorkerRef.current === null ){
         alignmentWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
@@ -110,7 +135,10 @@ const App: React.FC = () => {
           alignmentWorkerRef.current?.terminate();
           alignmentWorkerRef.current = null;
 
-          setTrainingState( {...trainingState, lastTrainedInstanceCount: trainingState.currentTrainingInstanceCount } );
+          setTrainingState( {...trainingStateRef.current, lastTrainedInstanceCount: trainingStateRef.current.currentTrainingInstanceCount } );
+
+          //start the training again if the number changed
+          startTraining();
         })
 
 
