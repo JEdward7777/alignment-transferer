@@ -60,8 +60,9 @@ const App: React.FC = () => {
   const [trainingState, setTrainingState] = useState<TrainingState>({
     isTrainingEnabled: false,
     trainingStatusOutput: "",
-    isTrainingGoing: false,
+    lastUsedInstanceCount: -1,
   })
+  const alignmentWorkerRef = useRef<Worker | null>(null);
 
   const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus } = state;
 
@@ -96,6 +97,23 @@ const App: React.FC = () => {
     if( trainingState.lastUsedInstanceCount !== groupCollection.instanceCount ){
       console.log("start training");
       setTrainingState( {...trainingState, lastUsedInstanceCount: groupCollection.instanceCount } );
+
+
+      if( alignmentWorkerRef.current === null ){
+        alignmentWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
+
+        alignmentWorkerRef.current.addEventListener('message', (event) => {
+          console.log( `alignment worker message: ${event.data}` );
+          alignmentWorkerRef.current?.terminate();
+          alignmentWorkerRef.current = null;
+        })
+
+
+        alignmentWorkerRef.current.postMessage('start');
+          
+      }else{
+        console.log("Alignment already running" );
+      }
     }else{
       console.log( "information not changed" );
     }
