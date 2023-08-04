@@ -36,12 +36,12 @@ self.addEventListener('message', (event: { data: TWorkerData }) => {
   wordAlignerModel.add_alignments_2(sourceVersesTokenized,targetVersesTokenized,alignments).then(()=>{
     
     //TODO, need to pass the model back to the other side.
-    self.postMessage('Worker has finished');
+    self.postMessage({message:'Worker has finished', trainedModel:wordAlignerModel.save()});
   }).catch((error)=>{
     console.log(error);
 
     //TODO, need to communicate error back to the other side.
-    self.postMessage('Worker has finished');
+    self.postMessage({message:'There was an error while training the word map.', error:error});
   })
 
 });

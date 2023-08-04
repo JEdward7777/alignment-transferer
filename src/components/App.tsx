@@ -15,6 +15,7 @@ import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog 
 import { TUsfmBook } from 'word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
 import WordMapBoosterWrapper from '@/shared/WordMapBoosterWrapper';
+import { AbstractWordMapWrapper } from 'wordmapbooster/dist/boostwordmap_tools';
 
 
 interface AppState {
@@ -83,7 +84,7 @@ const App: React.FC = () => {
 
   const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus } = state;
 
-  const alignmentPredictor = useRef( new WordMapBoosterWrapper() );
+  const alignmentPredictor = useRef< AbstractWordMapWrapper | null >( null );
 
 
 
@@ -144,8 +145,16 @@ const App: React.FC = () => {
             alignmentWorkerRef.current?.terminate();
             alignmentWorkerRef.current = null;
 
-            setTrainingState( {...trainingStateRef.current, lastTrainedInstanceCount: trainingStateRef.current.currentTrainingInstanceCount } );
 
+            //Load the trained model and put it somewhere it can be used.
+            if( "trainedModel" in event.data ){
+              alignmentPredictor.current = AbstractWordMapWrapper.load( event.data.trainedModel );
+            }
+            if( "error" in event.data ){
+              console.log( "Error running alignment worker: " + event.data.error );
+            }
+
+            setTrainingState( {...trainingStateRef.current, lastTrainedInstanceCount: trainingStateRef.current.currentTrainingInstanceCount } );
             //start the training again.  It won't run again if the instanceCount hasn't changed
             startTraining();
           })
