@@ -124,31 +124,38 @@ const App: React.FC = () => {
     //make sure that lastUsedInstanceCount isn't still the same as groupCollection.instanceCount
     if( trainingStateRef.current.lastTrainedInstanceCount !== stateRef.current.groupCollection.instanceCount ){
       if( alignmentWorkerRef.current === null ){
-        console.log(`start training for ${stateRef.current.groupCollection.instanceCount}`);
-        setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
 
-        //create a new worker.
-        alignmentWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
-
-        //Define the callback which will after the alignment trainer has finished
-        alignmentWorkerRef.current.addEventListener('message', (event) => {
-          console.log( `alignment worker message: ${event.data}` );
-          alignmentWorkerRef.current?.terminate();
-          alignmentWorkerRef.current = null;
-
-          setTrainingState( {...trainingStateRef.current, lastTrainedInstanceCount: trainingStateRef.current.currentTrainingInstanceCount } );
-
-          //start the training again.  It won't run again if the instanceCount hasn't changed
-          startTraining();
-        })
-
-
+        //before creating the worker, check to see if there is any data to train on.
         //get the information for the alignment to training.
         const alignmentTrainingData = stateRef.current.groupCollection.getAlignmentTrainingData();
 
-        console.log( "got it" );
+        //check if there are enough entries in the alignment training data dictionary
+        if( Object.values(alignmentTrainingData).length > 4 ){
 
-        alignmentWorkerRef.current.postMessage({alignmentTrainingData});
+          console.log(`start training for ${stateRef.current.groupCollection.instanceCount}`);
+          setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
+
+          //create a new worker.
+          alignmentWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
+
+          //Define the callback which will after the alignment trainer has finished
+          alignmentWorkerRef.current.addEventListener('message', (event) => {
+            console.log( `alignment worker message: ${event.data}` );
+            alignmentWorkerRef.current?.terminate();
+            alignmentWorkerRef.current = null;
+
+            setTrainingState( {...trainingStateRef.current, lastTrainedInstanceCount: trainingStateRef.current.currentTrainingInstanceCount } );
+
+            //start the training again.  It won't run again if the instanceCount hasn't changed
+            startTraining();
+          })
+
+
+          alignmentWorkerRef.current.postMessage({alignmentTrainingData});
+
+        }else{
+          console.log( "Not enough training data" );
+        }
           
       }else{
         console.log("Alignment already running" );
