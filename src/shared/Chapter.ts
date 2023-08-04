@@ -1,7 +1,7 @@
 import { is_number } from "@/utils/usfm_misc";
-import Verse from "./Verse";
+import Verse, { VerseState } from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { TUsfmChapter, TUsfmVerse } from "word-aligner-rcl";
+import { TSourceTargetAlignment, TUsfmChapter, TUsfmVerse } from "word-aligner-rcl";
 
 export default class Chapter {
     verses: { [key: number]: Verse };
@@ -156,5 +156,23 @@ export default class Chapter {
             }
         });
         return new Chapter( newVerses, newTargetUsfm, newSourceUsfm );
+    }
+
+    /**
+     * This function gets the alignment training data from this chapter.
+     * @return the alignment training data
+     */
+    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+        //This function need to modified when there is verse spanning alignments.
+
+
+        //first filter down to only the verses which are set to a training state.
+        const versesForTraining = Object.fromEntries(Object.entries(this.verses).filter( ([verse_num,verse]:[string,Verse]) => verse.getVerseAlignmentStatus() == VerseState.AlignedTrain ));
+        //now extract the source and target verses as strings as well as the alignments.
+        const result = Object.entries( versesForTraining ).reduce( (acc: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} , [verse_num,verse]:[string,Verse])=>{
+            acc[verse_num] = { targetVerse: verse.getTargetVerseAsString()!, sourceVerse: verse.getSourceVerseAsString()!, alignments: verse.getVerseAlignments()! };
+            return acc;
+        },{});
+        return result;
     }
 }

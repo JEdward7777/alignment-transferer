@@ -108,7 +108,7 @@ const App: React.FC = () => {
     setState( {...stateRef.current, alignerStatus: newAlignerStatus } );
   }
   const setIsTrainingEnabled = (newIsTrainingEnabled: boolean) => {
-    setTrainingState( {...trainingState, isTrainingEnabled: newIsTrainingEnabled } );
+    setTrainingState( {...trainingStateRef.current, isTrainingEnabled: newIsTrainingEnabled } );
   }
 
   function startTraining(){
@@ -127,8 +127,10 @@ const App: React.FC = () => {
         console.log(`start training for ${stateRef.current.groupCollection.instanceCount}`);
         setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
 
+        //create a new worker.
         alignmentWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
 
+        //Define the callback which will after the alignment trainer has finished
         alignmentWorkerRef.current.addEventListener('message', (event) => {
           console.log( `alignment worker message: ${event.data}` );
           alignmentWorkerRef.current?.terminate();
@@ -136,11 +138,17 @@ const App: React.FC = () => {
 
           setTrainingState( {...trainingStateRef.current, lastTrainedInstanceCount: trainingStateRef.current.currentTrainingInstanceCount } );
 
-          //start the training again if the number changed
+          //start the training again.  It won't run again if the instanceCount hasn't changed
           startTraining();
         })
 
-        alignmentWorkerRef.current.postMessage('start');
+
+        //get the information for the alignment to training.
+        const alignmentTrainingData = stateRef.current.groupCollection.getAlignmentTrainingData();
+
+        console.log( "got it" );
+
+        alignmentWorkerRef.current.postMessage({alignmentTrainingData});
           
       }else{
         console.log("Alignment already running" );
@@ -159,7 +167,7 @@ const App: React.FC = () => {
 
   //When the isTraining gets set call the startTraining function
   useEffect( () => {
-    if( trainingState.isTrainingEnabled ) {
+    if( trainingStateRef.current.isTrainingEnabled ) {
       startTraining();
     }else{
       stopTraining();

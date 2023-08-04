@@ -1,8 +1,8 @@
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTargetString } from "@/utils/usfm_misc";
-import { AlignmentHelpers, TUsfmVerse } from "word-aligner-rcl";
+import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTargetString, extractAlignmentsFromTargetVerse_JSON } from "@/utils/usfm_misc";
+import { AlignmentHelpers, TUsfmVerse, TSourceTargetAlignment } from "word-aligner-rcl";
 
-enum VerseState {
+export enum VerseState {
     NoSource = "no-source",
     NoTarget = "no-target",
     Unaligned = 'unaligned',
@@ -111,4 +111,46 @@ export default class Verse {
 
         return result;
     }
+
+
+    /**
+     * Returns the source verse as a string.
+     *
+     * @return {string|null} The source verse as a string, or null if the source verse is null.
+     */
+    getSourceVerseAsString():string|null{
+        if( this.sourceVerse == null ) return null;
+        return verseObjectsToTargetString( this.sourceVerse.verseObjects );
+    }
+
+    /**
+     * Returns the target verse as string.
+     * 
+     * @return {string|null} The target verse as a string, or null if the target verse is null.
+     */
+    getTargetVerseAsString():string|null{
+        if( this.targetVerse == null ) return null;
+        return verseObjectsToTargetString( this.targetVerse.verseObjects );
+    }
+
+    /**
+     * Returns the verse alignment status.
+     * 
+     * @return {VerseState} The verse alignment status.
+     */
+    getVerseAlignmentStatus():VerseState{
+        return this.state;
+    }
+
+    /**
+     * Returns the verse alignments.
+     * 
+     * @return {TSourceTargetAlignment[]} The verse alignments.
+     */
+    getVerseAlignments():TSourceTargetAlignment[] | null{
+        if( this.sourceVerse == null ) return null;
+        if( this.targetVerse == null ) return null;
+        return extractAlignmentsFromTargetVerse_JSON( this.targetVerse, this.sourceVerse).alignments;
+    }
+    
 }

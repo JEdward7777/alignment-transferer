@@ -23,14 +23,22 @@ declare module 'word-aligner-rcl'{
 
         
     }
-    interface TAlignment{
+
+
+    export interface TSourceTargetAlignment{
+        sourceNgram: TWord[];
+        targetNgram: TWord[];
+    }
+    
+
+    interface TTopBottomAlignment{
         topWords: TWord[];
         bottomWords: TWord[];
     }
 
     interface TAlignerData{
         wordBank: TWord[];
-        alignments: TAlignment[];
+        alignments: TSourceTargetAlignment[];
     }
   
 
@@ -87,10 +95,10 @@ declare module 'word-aligner-rcl'{
 
     export module AlignmentHelpers{
         export function getWordListFromVerseObjects( verseObjects: TWord[] ): Token[];
-        export function markTargetWordsAsDisabledIfAlreadyUsedForAlignments(targetWordList: Token[], alignments: TAlignment[]):TWord[];
+        export function markTargetWordsAsDisabledIfAlreadyUsedForAlignments(targetWordList: Token[], alignments: TSourceTargetAlignment[]):TWord[];
         export function addAlignmentsToVerseUSFM( wordBankWords: TWord[], verseAlignments: any, targetVerseText: string ): string;
         //I see that Algnments is not spelled correctly, it is this way in the library.
-        export function areAlgnmentsComplete( targetWords: TWord[], verseAlignments: TAlignment[] ): boolean;
+        export function areAlgnmentsComplete( targetWords: TWord[], verseAlignments: TSourceTargetAlignment[] ): boolean;
     }
 }
 

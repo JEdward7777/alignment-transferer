@@ -2,7 +2,7 @@ import Chapter from './Chapter';
 import { is_number } from '@/utils/usfm_misc';
 import Verse from './Verse';
 import { TState, TWordAlignerAlignmentResult } from '@/components/WordAlignerDialog';
-import { TUsfmBook, TUsfmChapter } from 'word-aligner-rcl';
+import { TSourceTargetAlignment, TUsfmBook, TUsfmChapter } from 'word-aligner-rcl';
 import { deepClone } from '@/utils/load_file';
 import JSZip from 'jszip';
 // @ts-ignore
@@ -235,5 +235,19 @@ export default class Book {
             }
         });
         return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook } );
+    }
+
+    /**
+     * This function gets the alignment training data from this chapter.
+     * @return the alignment training data
+     */
+    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+        const alignmentTrainingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+        Object.entries(this.chapters).forEach( ([chapter_number,chapter]: [string,Chapter])=>{
+            Object.entries(chapter.getAlignmentTrainingData()).forEach(([verse_number,alignment])=>{
+                alignmentTrainingData[`${chapter_number}:${verse_number}`] = alignment;
+            })              
+        });
+        return alignmentTrainingData;
     }
 }

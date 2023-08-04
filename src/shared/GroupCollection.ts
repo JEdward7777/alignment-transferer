@@ -2,7 +2,7 @@ import Group from "./Group";
 import {parseUsfmHeaders} from "../utils/usfm_misc";
 import Verse from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { TUsfmBook } from "word-aligner-rcl";
+import { TSourceTargetAlignment, TUsfmBook } from "word-aligner-rcl";
 import JSZip from "jszip";
 
 export default class GroupCollection {
@@ -217,4 +217,17 @@ export default class GroupCollection {
         return result;
     }
 
+    /**
+     * This function gets the alignment training data from this book.
+     * @return the alignment training data, with targetVerse, sourceVerse as strings and the alignments as TSourceTargetAlignment[]
+     */
+    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+        const alignmentTrainingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+        Object.entries(this.groups).forEach( ([group_name,group]: [string,Group])=>{
+            Object.entries(group.getAlignmentTrainingData()).forEach(([reference,alignment])=>{
+                alignmentTrainingData[`[${group_name}] ${reference}`] = alignment;
+            })              
+        });
+        return alignmentTrainingData;
+    }
 }

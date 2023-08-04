@@ -1,8 +1,8 @@
 import {default as word_aligner_default} from "word-aligner";
 import _wordmapLexer, { Token } from "wordmap-lexer";
-import { TUsfmVerse, TWord, usfmHelpers, AlignmentHelpers, TAlignment, TAlignerData, TUsfmHeader } from "word-aligner-rcl";
+import { TUsfmVerse, TWord, AlignmentHelpers, TUsfmHeader, TSourceTargetAlignment, TTopBottomAlignment } from "word-aligner-rcl";
 import { getOriginalLanguageListForVerseData, getAlignedWordListFromAlignments, updateAlignedWordsFromOriginalWordList } from 'word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';
-import { TWordAlignerAlignment, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
+import { TWordAlignerAlignment } from "@/components/WordAlignerDialog";
 export function parseUsfmHeaders(headers_section: TUsfmHeader[]) {
     const parsed_headers: { [key: string]: string } = headers_section.reduce((acc: { [key: string]: string }, entry: { tag: string, content: string }) => {
         if (entry.tag && entry.content) {
@@ -58,9 +58,6 @@ function convertOccurrences(wordList: TWord[]) {
  * @returns {{targetWords: *[], verseAlignments: *}}
  */
 export function parseUsfmToWordAlignerData_JSON(targetVerseUSFM: TUsfmVerse, sourceVerseUSFM: TUsfmVerse) {
-  //console.log( `potato: ${usfmHelpers.removeUsfmMarkers}`);
-
-  
   var targetTokens : Token[] = [];
   if (targetVerseUSFM) {
     if( targetVerseUSFM ){
@@ -85,7 +82,7 @@ export function parseUsfmToWordAlignerData_JSON(targetVerseUSFM: TUsfmVerse, sou
  * @param sourceVerse - optional source verse in verseObject format to maintain source language word order
  * @return {array} list of alignments in target text
  */
-function extractAlignmentsFromTargetVerse_JSON(targetVerse: TUsfmVerse, sourceVerse: TUsfmVerse) : {alignments: TAlignment[]}{
+export function extractAlignmentsFromTargetVerse_JSON(targetVerse: TUsfmVerse, sourceVerse: TUsfmVerse) : {alignments: TSourceTargetAlignment[]}{
     
     
     var alignments = word_aligner_default.unmerge(targetVerse,sourceVerse);
@@ -103,7 +100,7 @@ function extractAlignmentsFromTargetVerse_JSON(targetVerse: TUsfmVerse, sourceVe
     if (alignments.alignment) {
       // for compatibility change alignment to alignments
       // convert occurrence(s) from string to number
-      var alignments_ = alignments.alignment.map(function (alignment: TAlignment) {
+      var alignments_ = alignments.alignment.map(function (alignment: TTopBottomAlignment) {
         var topWords = convertOccurrences(alignment.topWords);
         var bottomWords = convertOccurrences(alignment.bottomWords);
         return {

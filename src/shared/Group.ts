@@ -2,7 +2,7 @@ import { is_number, parseUsfmHeaders } from "@/utils/usfm_misc";
 import Book from "./Book";
 import Verse from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { TUsfmBook, TUsfmChapter } from "word-aligner-rcl";
+import { TSourceTargetAlignment, TUsfmBook, TUsfmChapter } from "word-aligner-rcl";
 import JSZip from "jszip";
 
 export default class Group {
@@ -179,5 +179,19 @@ export default class Group {
             }
         });
         return new Group( newBooks );
+    }
+
+    /**
+     * This function gets the alignment training data from this book.
+     * @return the alignment training data
+     */
+    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+        const alignmentTrainingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+        Object.entries(this.books).forEach( ([book_name,book]: [string,Book])=>{
+            Object.entries(book.getAlignmentTrainingData()).forEach(([reference,alignment])=>{
+                alignmentTrainingData[`${book_name} ${reference}`] = alignment;
+            })              
+        });
+        return alignmentTrainingData;
     }
 }
