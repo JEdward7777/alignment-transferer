@@ -6,6 +6,8 @@ import { SuggestingWordAligner, TAlignerData, TReference, TWord } from 'word-ali
 import Button from '@mui/material/Button'
 import Paper, { PaperProps } from '@mui/material/Paper';
 import Draggable from 'react-draggable'
+import { Token } from 'wordmap-lexer'
+import { Alignment, Suggestion } from 'wordmap'
 
 const alignmentIconStyle = { marginLeft:'50px' }
 
@@ -43,6 +45,7 @@ interface WordAlignerDialogProps{
     alignerStatus: TAlignerStatus | null,
     height: number,
     translate: (key:string)=>string,
+    suggester: (sourceSentence: string | Token[], targetSentence: string | Token[], maxSuggestions: number, manuallyAligned: Alignment[] ) => Suggestion[]
 }
 
 
@@ -62,6 +65,7 @@ export const WordAlignerDialog: React.FC<WordAlignerDialogProps> = ({
   alignerStatus,
   height,
   translate,
+  suggester,
 }) => {
   const [alignmentChange, setAlignmentChange] = useState<TWordAlignerAlignmentResult|null>(null)
   const [aligned, setAligned] = useState(false)
@@ -151,6 +155,7 @@ export const WordAlignerDialog: React.FC<WordAlignerDialogProps> = ({
                 lexicons={{}}
                 loadLexiconEntry={(arg)=>{ return{} }}
                 onChange={onAlignmentChange}
+                suggester={suggester}
                 />
           }
         </div>

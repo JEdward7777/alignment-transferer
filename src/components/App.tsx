@@ -47,7 +47,6 @@ function translate( key: string ): string{
 
   console.log( `missed translate key: ${key}` );
   return ":-)";
-
 }
 
 
@@ -529,6 +528,7 @@ const App: React.FC = () => {
         alignerStatus={alignerStatus}
         height={wordAlignerHeight}
         translate={translate}
+        suggester={alignmentPredictor.current?.predict.bind(alignmentPredictor.current)}
         />
 
       <footer className="py-4 bg-gray-200">
