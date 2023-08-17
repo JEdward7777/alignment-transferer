@@ -512,6 +512,25 @@ const App: React.FC = () => {
     return _height
   }, [height])
 
+
+  // const hackedPredict = (sourceSentence: string | Token[], targetSentence: string | Token[], maxSuggestions?: number, manuallyAligned: Alignment[] = []): Suggestion[] => {
+  //   //{alignmentPredictor.current?.predict.bind(alignmentPredictor.current)||null}
+  //   const suggestions = alignmentPredictor.current?.predict(sourceSentence, targetSentence, maxSuggestions, manuallyAligned);
+
+  //   // const sourceToken = new Token( {text:"Παῦλος"} );
+  //   // const targetToken = new Token( {text:"apóstol"} );
+  //   // const sourceNgram = new Ngram( [sourceToken] );
+  //   // const targetNgram = new Ngram( [targetToken] );
+  //   // const alignment = new Alignment( sourceNgram, targetNgram );
+  //   // const prediction = new Prediction( alignment );
+  //   // const suggestion = new Suggestion();
+  //   // suggestion.addPrediction(prediction);
+
+  //   // const suggestions = [suggestion];
+
+  //   return suggestions
+  // };
+
   return (
     <div className="h-screen flex flex-col py-4">
       <header className="py-4 bg-gray-200">
