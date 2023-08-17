@@ -189,10 +189,18 @@ const App: React.FC = () => {
     }
   }, [trainingState.isTrainingEnabled,groupCollection.instanceCount] );
 
-  //Put a status indication in the toolbar of the current groupCollection instance count
+  //Update the toolbar with the status of the training
   useEffect( () => {
-    setTrainingState( {...trainingStateRef.current, trainingStatusOutput:`GroupNum ${groupCollection.instanceCount}`} );
-  }, [groupCollection.instanceCount] );
+    const newTrainingStatusOutput = 
+       (alignmentWorkerRef.current === null )? 
+         ((alignmentPredictor.current === null)? "Not trained" : "Trained"):
+         ((alignmentPredictor.current === null)? "Training..." : "Updating...");
+
+    //now make sure it is changed before setting it to prevent a loop.
+    if( newTrainingStatusOutput != trainingStateRef.current.trainingStatusOutput ){
+      setTrainingState( {...trainingStateRef.current, trainingStatusOutput: newTrainingStatusOutput } );
+    }
+  }, [trainingState] );
 
   // const stringResourceKey = (resourceKey: string[]): string => {
   //   const sanitizedKey = resourceKey.map((entry) => entry.replace(/->/g, '->>'));
