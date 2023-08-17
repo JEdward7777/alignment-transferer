@@ -35,11 +35,11 @@ interface TrainingState{
 
 const translateDict : {[key:string]:string}= {
   "suggestions.refresh_suggestions": "Refresh suggestions.",
-  "suggestions.refresh": "Refresh",
+  "suggestions.refresh": "Refresh Suggestions",
   "suggestions.accept_suggestions": "Accept all suggestions.",
-  "suggestions.accept": "Accept",
+  "suggestions.accept": "Accept Suggestions",
   "suggestions.reject_suggestions": "Reject all suggestions.",
-  "suggestions.reject": "Reject",
+  "suggestions.reject": "Reject Suggestions",
 }
 
 function translate( key: string ): string{
