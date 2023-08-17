@@ -279,8 +279,6 @@ const App: React.FC = () => {
       const newGroupCollection = groupCollection.addTargetUsfm({group_name, usfm_json })
       setGroupCollection( newGroupCollection );
 
-      await showMessage( "target usfm loaded" )
-
     } catch( error ){
       //user declined
       console.log( `error importing ${error}` );
