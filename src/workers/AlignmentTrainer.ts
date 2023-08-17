@@ -32,7 +32,7 @@ self.addEventListener('message', (event: { data: TWorkerData }) => {
   //Create the training object.
   //There are several different word map classes,
   //and there are different hyper parameters which can be passed into it as well.
-  const wordAlignerModel = new MorphJLBoostWordMap({ targetNgramLength: 5, warnings: false, forceOccurrenceOrder:false, train_steps:100 });
+  const wordAlignerModel = new MorphJLBoostWordMap({ targetNgramLength: 5, warnings: false, forceOccurrenceOrder:false, train_steps:1000 });
   wordAlignerModel.add_alignments_2(sourceVersesTokenized,targetVersesTokenized,alignments).then(()=>{
     
     //TODO, need to pass the model back to the other side.
