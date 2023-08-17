@@ -536,7 +536,7 @@ const App: React.FC = () => {
         alignerStatus={alignerStatus}
         height={wordAlignerHeight}
         translate={translate}
-        suggester={alignmentPredictor.current?.predict.bind(alignmentPredictor.current)}
+        suggester={alignmentPredictor.current?.predict.bind(alignmentPredictor.current)||null}
         />
 
       <footer className="py-4 bg-gray-200">

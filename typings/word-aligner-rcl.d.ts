@@ -80,6 +80,7 @@ declare module 'word-aligner-rcl'{
         lexicons: {};
         loadLexiconEntry: (arg:string)=>{[key:string]:string};
         onChange: (results: TWordAlignerAlignmentResult) => void;
+        suggester: ((sourceSentence: string | Token[], targetSentence: string | Token[], maxSuggestions?: number, manuallyAligned: Alignment[] = []) => Suggestion[]) | null;
     }
     export class SuggestingWordAligner extends React.Component<SuggestingWordAlignerProps>{}
 

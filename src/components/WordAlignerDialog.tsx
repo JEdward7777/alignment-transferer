@@ -45,7 +45,7 @@ interface WordAlignerDialogProps{
     alignerStatus: TAlignerStatus | null,
     height: number,
     translate: (key:string)=>string,
-    suggester: (sourceSentence: string | Token[], targetSentence: string | Token[], maxSuggestions: number, manuallyAligned: Alignment[] ) => Suggestion[]
+    suggester: ((sourceSentence: string | Token[], targetSentence: string | Token[], maxSuggestions?: number, manuallyAligned?: Alignment[] ) => Suggestion[])|null
 }
 
 
