@@ -15,6 +15,40 @@ export default class Chapter {
         this.sourceUsfm = sourceUsfm;
     }
 
+    /**
+     * Loads a chapter object from a serialized representation.
+     *
+     * @param {any} chapter - The serialized chapter object.
+     * @return {Chapter} The revived chapter object.
+     */
+    static load( chapter_number_string: string, chapter: any ): Chapter {
+        const newVerses: {[key:number]:Verse} = {};
+        if( chapter.verses ){
+            Object.entries(chapter.verses).forEach( ([verse_number_string,usfm_verse]:[string,any]) => {
+                if( is_number(verse_number_string) ){
+                    const verse_number_int = parseInt( verse_number_string );
+                    newVerses[verse_number_int] = Verse.load( verse_number_string, usfm_verse );
+                }
+            });
+        }
+        //The usfm is added after construction in the book's load method.
+        //Otherwise the usfm would be in the structure multiple times.
+        return new Chapter( newVerses, null, null );
+    } 
+
+    /**
+     * Converts the object to JSON format.
+     *
+     * @return {any} The JSON representation of the object.
+     */
+    toJSON(): any{
+        return {
+            verses: this.verses,
+            //drop target and source usfm because it is in the book structure.
+        }
+    }
+
+    
     addTargetUsfm( usfm_chapter: TUsfmChapter ): Chapter{
         const newVerses: {[key:number]:Verse} = {};
 
@@ -54,6 +88,13 @@ export default class Chapter {
         }
     }
 
+    /**
+     * Retrieves the list headers based on the given scope.
+     * The list is spreadsheet view of the program.
+     *
+     * @param {string} scope - The scope for retrieving the list headers.
+     * @return {string[]} - The list of headers.
+     */
     static getListHeaders( scope:string ):string[]{
         if( scope == "Chapter" ) return ["Chapter","Verses"];
         return ["Chapter"].concat( Verse.getListHeaders() );

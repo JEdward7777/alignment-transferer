@@ -14,6 +14,28 @@ export default class GroupCollection {
         this.instanceCount = newInstanceCount;
     }
 
+    /**
+     * Loads a group collection from a serialized format.
+     *
+     * @param {object} groupCollection - The serialized group collection.
+     * @return {GroupCollection} The revived group collection.
+     */
+    static load( groupCollection: {[key:string]: any} ): GroupCollection {
+        const newGroups : {[key:string]: Group} = {};
+        if( !groupCollection ) return new GroupCollection(newGroups, 0);
+
+        let newInstanceCount = 0;
+        if( groupCollection.instanceCount ) newInstanceCount = groupCollection.instanceCount;
+
+        if( !groupCollection.groups ) return new GroupCollection(newGroups, newInstanceCount);
+        if( !(groupCollection.groups instanceof Object) ) return new GroupCollection(newGroups, newInstanceCount);
+        
+        Object.entries(groupCollection.groups as any).forEach( ([group_name,group]: [string,any]) => {
+            newGroups[group_name] = Group.load(group_name,group);
+        })
+        return new GroupCollection(newGroups, newInstanceCount);
+    }
+
 
     hasBookInGroup({ group_name, usfm_book }: {group_name: string; usfm_book: TUsfmBook } ): boolean{
         if( !(group_name in this.groups) ) return false;

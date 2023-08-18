@@ -27,6 +27,30 @@ export default class Verse {
         return result;
     }
 
+    /**
+     * Loads a verse using the given verse number string and verse object.
+     *
+     * @param {string} verse_number_string - The verse number string.
+     * @param {any} verse - The verse object.
+     * @return {Verse} The revived verse.
+     */
+    static load( verse_number_string: string, verse: any ): Verse {
+        const newVerse: Verse = new Verse();
+        //don't pull in the source verse because it is in the book structure.
+        newVerse.sourceVerse = null;
+        newVerse.targetVerse = null;
+        if( verse.state ) newVerse.state = verse.state;
+        return newVerse;
+    }
+
+    toJSON(): any{
+        return {
+            state: this.state,
+            //Don't export sourceVerse or targetVerse
+            //because it is held at the book level in the json export.
+        };
+    }
+
     
     /**
      * Computes what the state of this verse should be.

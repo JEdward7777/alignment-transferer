@@ -13,14 +13,67 @@ export default class Book {
     chapters: { [key: number]: Chapter };
     filename: string;
     toc3Name: string;
+    sourceUsfmBook: TUsfmBook | null;
     targetUsfmBook: TUsfmBook | null;
 
 
-    constructor( {chapters,filename,toc3Name,targetUsfmBook}: {chapters:{[key:number]:Chapter},filename:string,toc3Name:string,targetUsfmBook:TUsfmBook|null} ) {
+    constructor( {chapters,filename,toc3Name, sourceUsfmBook, targetUsfmBook}: {chapters:{[key:number]:Chapter},filename:string,toc3Name:string,sourceUsfmBook:TUsfmBook|null,targetUsfmBook:TUsfmBook|null} ) {
         this.chapters = chapters;
         this.filename = filename;
         this.toc3Name = toc3Name;
+        this.sourceUsfmBook = sourceUsfmBook;
         this.targetUsfmBook = targetUsfmBook;
+    }
+
+    /**
+     * Loads a book object from its serialized form.
+     *
+     * @param {any} book - The serialized book object.
+     * @return {Book} The revived Book object.
+     */
+    static load( book_name: string, book: any ): Book {
+        const newChapters: {[key:number]:Chapter} = {};
+        if( book.chapters ){
+            Object.entries(book.chapters).forEach( ([chapter_number_string,chapter]:[string,any]) => {
+                if( is_number(chapter_number_string) ){
+                    const chapter_number_int = parseInt( chapter_number_string );
+                    newChapters[chapter_number_int] = Chapter.load( chapter_number_string, chapter );
+                }
+            });
+        }
+        let filename = "unknown";
+        if( book.filename ){
+            filename = book.filename;
+        }
+        let toc3Name = "unknown";
+        if( book.toc3Name ){
+            toc3Name = book.toc3Name;
+        }
+        let sourceUsfmBook = null;
+        if( book.sourceUsfmBook ){
+            sourceUsfmBook = book.sourceUsfmBook;
+        }
+        let targetUsfmBook = null;
+        if( book.targetUsfmBook ){
+            targetUsfmBook = book.targetUsfmBook;
+        }
+
+        const constructedBook = new Book( {chapters:newChapters, filename, toc3Name, sourceUsfmBook:null,targetUsfmBook:null} )
+
+        const targetUsfmAdded = constructedBook.addTargetUsfm({
+            filename,
+            usfm_book:targetUsfmBook as any,
+            toc3Name
+        })
+
+        const sourceUsfmAdded = targetUsfmAdded.addSourceUsfm({
+            usfm_book:sourceUsfmBook as any,
+            isResourceSelected:()=>true,
+            group_name:"", //This is used for the isResourceSelected which we don't need.
+            book_name
+        }).modifiedBook;
+
+        return sourceUsfmAdded;
     }
 
     /**
@@ -30,6 +83,8 @@ export default class Book {
      * @returns a new copy of the Book object with the usfm content added.
      */
     addTargetUsfm( {filename,usfm_book,toc3Name}:{filename:string,usfm_book:TUsfmBook,toc3Name:string}):Book{
+        if( !usfm_book ) return this;
+
         const newChapters: {[key:number]:Chapter} = {};
 
         Object.entries(usfm_book.chapters).forEach( ([chapter_number_string,usfm_chapter]:[string,TUsfmChapter]) => {
@@ -40,10 +95,12 @@ export default class Book {
             }
         });
 
-        return new Book( {chapters:{...this.chapters,...newChapters}, filename, toc3Name, targetUsfmBook:usfm_book} );
+        return new Book( {chapters:{...this.chapters,...newChapters}, filename, toc3Name, targetUsfmBook:usfm_book, sourceUsfmBook:this.sourceUsfmBook} );
     }
 
     addSourceUsfm( {usfm_book, isResourceSelected, group_name, book_name }:{usfm_book:TUsfmBook,isResourceSelected:( resourceKey: string[] )=>boolean,group_name:string,book_name:string} ):{ addedVerseCount:number, droppedVerseCount:number, modifiedBook:Book }{
+        if( !usfm_book ) return { addedVerseCount:0, droppedVerseCount:0, modifiedBook:this };
+
         const modifiedChapters: {[key:number]:Chapter} = {};
         let totalAddedVerseCount = 0;
         let totalDroppedVerseCount = 0;
@@ -65,7 +122,7 @@ export default class Book {
         return {
             addedVerseCount:totalAddedVerseCount,
             droppedVerseCount: totalDroppedVerseCount,
-            modifiedBook: new Book( {chapters:{...this.chapters,...modifiedChapters}, filename:this.filename, toc3Name:this.toc3Name, targetUsfmBook:this.targetUsfmBook } ),
+            modifiedBook: new Book( {chapters:{...this.chapters,...modifiedChapters}, filename:this.filename, toc3Name:this.toc3Name, targetUsfmBook:this.targetUsfmBook, sourceUsfmBook:usfm_book } ),
         }
     }
 
@@ -124,7 +181,7 @@ export default class Book {
         newTargetUsfm.chapters[chapter_num] = newChapter.targetUsfm!;
 
         const newChapters = { ...this.chapters, [chapter_num]: newChapter };
-        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfm } );
+        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfm, sourceUsfmBook:this.sourceUsfmBook } );
     }
 
     /**
@@ -184,25 +241,47 @@ export default class Book {
         }));
 
         //now also filter the usfm information.
-        const newTargetUsfmBook = deepClone( this.targetUsfmBook )!;
+        let newTargetUsfmBook : TUsfmBook | null = null;
+        if( this.targetUsfmBook ){
+            newTargetUsfmBook = deepClone( this.targetUsfmBook );
 
-        Object.entries(newTargetUsfmBook.chapters).forEach(([chapter_number,chapter]:[string,TUsfmChapter])=>{
-            const chapterKey = bookKey.concat([chapter_number]);
-            //just pass the front or other sections which are not numbers.
-            if( is_number(chapter_number) ){
-                //if it isn't partially selected we can just pass it.
-                if( isResourcePartiallySelected( chapterKey ) ){
-                    //Check to see if the partially selected chapter should be whittled or removed.
-                    if( chapter_number in newChapters ){
-                        newTargetUsfmBook.chapters[chapter_number] = newChapters[chapter_number].targetUsfm!;
-                    }else{
-                        delete newTargetUsfmBook.chapters[chapter_number];
+            Object.entries(newTargetUsfmBook.chapters).forEach(([chapter_number,chapter]:[string,TUsfmChapter])=>{
+                const chapterKey = bookKey.concat([chapter_number]);
+                //just pass the front or other sections which are not numbers.
+                if( is_number(chapter_number) ){
+                    //if it isn't partially selected we can just pass it.
+                    if( isResourcePartiallySelected( chapterKey ) ){
+                        //Check to see if the partially selected chapter should be whittled or removed.
+                        if( chapter_number in newChapters ){
+                            newTargetUsfmBook!.chapters[chapter_number] = newChapters[chapter_number].targetUsfm!;
+                        }else{
+                            delete newTargetUsfmBook!.chapters[chapter_number];
+                        }
+                    }                
+                }
+            })
+        }
+        let newSourceUsfmBook : TUsfmBook | null = null;
+        if( this.sourceUsfmBook ){
+            newSourceUsfmBook = deepClone( this.sourceUsfmBook );
+
+            Object.entries(newSourceUsfmBook.chapters).forEach(([chapter_number,chapter]:[string,TUsfmChapter])=>{
+                const chapterKey = bookKey.concat([chapter_number]);
+                //just pass the front or other sections which are not numbers.
+                if( is_number(chapter_number) ){
+                    //if it isn't partially selected we can just pass it.
+                    if( isResourcePartiallySelected( chapterKey ) ){
+                        //Check to see if the partially selected chapter should be whittled or removed.
+                        if( chapter_number in newChapters ){
+                            newSourceUsfmBook!.chapters[chapter_number] = newChapters[chapter_number].sourceUsfm!;
+                        }else{
+                            delete newSourceUsfmBook!.chapters[chapter_number];
+                        }
                     }
-                }                
-            }
-        })
-
-        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook } );
+                }
+            })
+        }
+        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook, sourceUsfmBook:newSourceUsfmBook } );
     }
 
     /**
@@ -218,6 +297,7 @@ export default class Book {
         //fall over to the other other book's usfm for the target usfm
         //so we can have book headers.
         let newTargetUsfmBook : TUsfmBook | null = (this.targetUsfmBook !== null)?this.targetUsfmBook:book.targetUsfmBook;
+        let newSourceUsfmBook : TUsfmBook | null = (this.sourceUsfmBook !== null)?this.sourceUsfmBook:book.sourceUsfmBook;
         Object.entries(book.chapters).forEach(([chapter_number,chapter]:[string,Chapter])=>{
             const chapter_number_int = parseInt(chapter_number);
             if( chapter_number in newChapters ){
@@ -227,14 +307,22 @@ export default class Book {
                 if( newTargetUsfmBook != null && mergedChapter.targetUsfm != null ){
                     newTargetUsfmBook.chapters[chapter_number_int] = mergedChapter.targetUsfm!;
                 }
+                if( newSourceUsfmBook != null && mergedChapter.sourceUsfm != null ){
+                    newSourceUsfmBook.chapters[chapter_number_int] = mergedChapter.sourceUsfm!;
+                }
             }else{
                 newChapters[chapter_number_int] = chapter;
                 if( newTargetUsfmBook != null && chapter.targetUsfm != null ){
                     newTargetUsfmBook.chapters[chapter_number_int] = chapter.targetUsfm!;
                 }
+                if( newSourceUsfmBook != null && chapter.sourceUsfm != null ){
+                    newSourceUsfmBook.chapters[chapter_number_int] = chapter.sourceUsfm!;
+                }
             }
         });
-        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook } );
+
+    
+        return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook, sourceUsfmBook:newSourceUsfmBook } );
     }
 
     /**

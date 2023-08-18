@@ -14,7 +14,6 @@ import usfm from 'usfm-js';
 import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog } from './WordAlignerDialog';
 import { TUsfmBook } from 'word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
-import WordMapBoosterWrapper from '@/shared/WordMapBoosterWrapper';
 import { AbstractWordMapWrapper } from 'wordmapbooster/dist/boostwordmap_tools';
 
 
@@ -85,7 +84,54 @@ const App: React.FC = () => {
 
   const alignmentPredictor = useRef< AbstractWordMapWrapper | null >( null );
 
+  //here we load from local storage.
+  useEffect(() => {
+    //load state
+    const stateStr = localStorage.getItem("state");
+    if( stateStr ){
+      const stateDict = JSON.parse(stateStr );
+      const newGroupCollection = ( "groupCollection" in stateDict ) ? GroupCollection.load(stateDict.groupCollection) : new GroupCollection({}, 0);
+      const newState = {
+        ...stateDict,
+        groupCollection: newGroupCollection,
+      }
+      setState( newState );
+    }
+    //load trainingState
+    const trainingStateStr = localStorage.getItem("trainingState");
+    if( trainingStateStr ){
+      const trainingStateDict = JSON.parse(trainingStateStr );
+      setTrainingState( trainingStateDict );
+    }
+    //load the model.
+    const modelStr = localStorage.getItem("alignmentPredictor");
+    if( modelStr ){
+      const model = JSON.parse(modelStr );
+      if( model !== null ){
+        try{
+          alignmentPredictor.current = AbstractWordMapWrapper.load(model);
+        }catch(e){
+          console.log(`error loading alignmentPredictor: ${e.message }`);
+        }
+      }
+    }
 
+  },[]);
+
+
+  //Handle saving state to localStorage.
+  useEffect(() => {
+    const stateJson = JSON.stringify(stateRef.current);
+    localStorage.setItem("state", stateJson);
+  }, [state]);
+  //Also save out the model to local storage.
+  useEffect(() => {
+    localStorage.setItem("alignmentPredictor", JSON.stringify(alignmentPredictor.current?.save()));
+  }, [trainingState.lastTrainedInstanceCount]);
+  
+  useEffect(()=>{
+    localStorage.setItem("trainingState", JSON.stringify(trainingStateRef.current));
+  },[trainingState]);
 
 
   const setGroupCollection = (newGroupCollection: GroupCollection ) => {
@@ -530,6 +576,9 @@ const App: React.FC = () => {
 
   //   return suggestions
   // };
+
+
+
 
   return (
     <div className="h-screen flex flex-col py-4">

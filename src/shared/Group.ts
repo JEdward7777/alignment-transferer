@@ -12,6 +12,23 @@ export default class Group {
         this.books = newBooks || {};
     }
 
+    /**
+     * Loads a Group object from a serialized representation.
+     *
+     * @param {Object} group - The serialized representation of a Group object.
+     * @return {Group} A new Group object.
+     */
+    static load( group_name_string: string, group: {[key:string]: any} ): Group {
+        const newBooks : {[key:string]: Book} = {};
+        if( !group ) return new Group(newBooks);
+        if( !group.books ) return new Group(newBooks);
+        if( !(group.books instanceof Object) ) return new Group(newBooks);
+        Object.entries(group.books as any).forEach( ([book_name,book]: [string,any]) => {
+            newBooks[book_name] = Book.load(book_name, book);
+        })
+        return new Group(newBooks);
+    }
+
     hasBook( usfmBookName: string ): boolean{
         return usfmBookName in this.books;
     }
@@ -25,7 +42,7 @@ export default class Group {
 
         Object.entries(usfm_json).forEach(([filename,usfm_book])=>{
             const usfmHeaders = parseUsfmHeaders(usfm_book.headers);
-            const newBook = this.books[usfmHeaders.h] || new Book( {chapters:{},filename:"",toc3Name:"",targetUsfmBook:null} );
+            const newBook = this.books[usfmHeaders.h] || new Book( {chapters:{},filename:"",toc3Name:"",targetUsfmBook:null,sourceUsfmBook:null} );
             newBooks[usfmHeaders.h] = newBook.addTargetUsfm({filename,usfm_book,toc3Name:usfmHeaders.toc3});
         });
 
