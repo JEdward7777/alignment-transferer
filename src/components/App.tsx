@@ -88,7 +88,7 @@ const App: React.FC = () => {
   useEffect(() => {
     //load state
     const stateStr = localStorage.getItem("state");
-    if( stateStr ){
+    if( stateStr  && stateStr !== "undefined" ){
       const stateDict = JSON.parse(stateStr );
       const newGroupCollection = ( "groupCollection" in stateDict ) ? GroupCollection.load(stateDict.groupCollection) : new GroupCollection({}, 0);
       const newState = {
@@ -99,18 +99,18 @@ const App: React.FC = () => {
     }
     //load trainingState
     const trainingStateStr = localStorage.getItem("trainingState");
-    if( trainingStateStr ){
+    if( trainingStateStr && trainingStateStr !== "undefined" ){
       const trainingStateDict = JSON.parse(trainingStateStr );
       setTrainingState( trainingStateDict );
     }
     //load the model.
     const modelStr = localStorage.getItem("alignmentPredictor");
-    if( modelStr ){
+    if( modelStr && modelStr !== "undefined" ){
       const model = JSON.parse(modelStr );
       if( model !== null ){
         try{
           alignmentPredictor.current = AbstractWordMapWrapper.load(model);
-        }catch(e){
+        }catch(e: any){
           console.log(`error loading alignmentPredictor: ${e.message }`);
         }
       }
