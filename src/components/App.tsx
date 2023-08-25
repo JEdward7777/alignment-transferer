@@ -15,6 +15,7 @@ import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog 
 import { TUsfmBook } from 'word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
 import { AbstractWordMapWrapper } from 'wordmapbooster/dist/boostwordmap_tools';
+import IndexedDBStorage from '@/shared/IndexedDBStorage';
 
 
 interface AppState {
@@ -50,6 +51,9 @@ function translate( key: string ): string{
 
 
 const App: React.FC = () => {
+  const dbStorageRef = useRef<IndexedDBStorage | null>(null);
+
+
   const [state, _setState] = useState<AppState>({
     groupCollection: new GroupCollection({}, 0),
     scope: "Book",
@@ -86,51 +90,77 @@ const App: React.FC = () => {
 
   //here we load from local storage.
   useEffect(() => {
-    //load state
-    const stateStr = localStorage.getItem("state");
-    if( stateStr  && stateStr !== "undefined" ){
-      const stateDict = JSON.parse(stateStr );
-      const newGroupCollection = ( "groupCollection" in stateDict ) ? GroupCollection.load(stateDict.groupCollection) : new GroupCollection({}, 0);
-      const newState = {
-        ...stateDict,
-        groupCollection: newGroupCollection,
+    (async () => {
+      const dbStorage = new IndexedDBStorage( 'app-state', 'dataStore' );
+      await dbStorage.initialize();
+      console.log( `IndexedDBStorage initialized ${dbStorage.isReady()}` );
+
+      //load state
+      const stateStr: string | null = await dbStorage.getItem("state");
+      if( stateStr  && stateStr !== "undefined" ){
+        const stateDict = JSON.parse(stateStr );
+        const newGroupCollection = ( "groupCollection" in stateDict ) ? GroupCollection.load(stateDict.groupCollection) : new GroupCollection({}, 0);
+        const newState = {
+          ...stateDict,
+          groupCollection: newGroupCollection,
+        }
+        setState( newState );
       }
-      setState( newState );
-    }
-    //load trainingState
-    const trainingStateStr = localStorage.getItem("trainingState");
-    if( trainingStateStr && trainingStateStr !== "undefined" ){
-      const trainingStateDict = JSON.parse(trainingStateStr );
-      setTrainingState( trainingStateDict );
-    }
-    //load the model.
-    const modelStr = localStorage.getItem("alignmentPredictor");
-    if( modelStr && modelStr !== "undefined" ){
-      const model = JSON.parse(modelStr );
-      if( model !== null ){
-        try{
-          alignmentPredictor.current = AbstractWordMapWrapper.load(model);
-        }catch(e: any){
-          console.log(`error loading alignmentPredictor: ${e.message }`);
+      //load the model.
+      const modelStr : string | null = await dbStorage.getItem("alignmentPredictor");
+      if( modelStr && modelStr !== "undefined" ){
+        const model = JSON.parse( modelStr );
+        if( model !== null ){
+          try{
+            alignmentPredictor.current = AbstractWordMapWrapper.load(model);
+          }catch(e: any){
+            console.log(`error loading alignmentPredictor: ${e.message }`);
+          }
         }
       }
-    }
+      //load trainingState
+      const trainingStateStr : string | null = await dbStorage.getItem("trainingState");
+      if( trainingStateStr && trainingStateStr !== "undefined" ){
+        const trainingStateDict = JSON.parse(trainingStateStr );
+        setTrainingState( trainingStateDict );
+      }
 
+      //don't set the reference to the dbStorage for setting until after
+      //we have finished loading so that data which is stale doesn't overwrite
+      //the data we are wanting to load.
+      dbStorageRef.current = dbStorage;
+
+    })();
   },[]);
 
 
   //Handle saving state to localStorage.
   useEffect(() => {
-    const stateJson = JSON.stringify(stateRef.current);
-    localStorage.setItem("state", stateJson);
+    (async () => {
+      if( dbStorageRef.current == null ) return;
+      if( !dbStorageRef.current.isReady() ) return;
+
+      const stateJson = JSON.stringify(stateRef.current);
+      await dbStorageRef.current.setItem("state", stateJson);
+    })();
   }, [state]);
   //Also save out the model to local storage.
   useEffect(() => {
-    localStorage.setItem("alignmentPredictor", JSON.stringify(alignmentPredictor.current?.save()));
+    (async () => {
+      if( dbStorageRef.current == null ) return;
+      if( !dbStorageRef.current.isReady() ) return;
+
+      await dbStorageRef.current.setItem("alignmentPredictor", JSON.stringify(alignmentPredictor.current?.save()));
+    })();
   }, [trainingState.lastTrainedInstanceCount]);
   
   useEffect(()=>{
-    localStorage.setItem("trainingState", JSON.stringify(trainingStateRef.current));
+    (async () => {
+      if( dbStorageRef.current == null ) return;
+      if( !dbStorageRef.current.isReady() ) return;
+
+      await dbStorageRef.current.setItem("trainingState", JSON.stringify(trainingStateRef.current));
+    })();
   },[trainingState]);
 
 

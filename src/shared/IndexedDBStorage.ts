@@ -17,8 +17,8 @@ export default class IndexedDBStorage {
         const request = indexedDB.open(this.databaseName, 1);
   
         request.onupgradeneeded = event => {
-        const db = (event.target as IDBOpenDBRequest).result as IDBDatabase;
-          db.createObjectStore(this.storeName);
+            const db = (event.target as IDBOpenDBRequest).result as IDBDatabase;
+            db.createObjectStore(this.storeName);
         };
   
         request.onsuccess = event => {
@@ -27,9 +27,14 @@ export default class IndexedDBStorage {
         };
   
         request.onerror = event => {
-          reject((event.target as IDBOpenDBRequest).error);
+            console.log( (event.target as IDBOpenDBRequest).error );
+            reject((event.target as IDBOpenDBRequest).error);
         };
       });
+    }
+
+    isReady(): boolean {
+      return !!this.db;
     }
   
     async getItem<T>(key: string): Promise<T | null> {
