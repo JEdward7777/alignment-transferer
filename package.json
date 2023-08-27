@@ -32,5 +32,8 @@
     "word-aligner": "^1.0.2",
     "wordmap": "^0.6.0",
     "wordmap-lexer": "^0.3.6"
+  },
+  "devDependencies": {
+    "netlify-cli": "^16.1.0"
   }
 }

@@ -90,6 +90,16 @@ export default class Group {
             newGroup:new Group({ ...this.books, ...modifiedBooks}) };
     }
 
+    setTestReservation( {reservedForTesting, isResourcePartiallySelected, group_name }: {reservedForTesting:boolean, isResourcePartiallySelected:( resourceKey: string[] )=>boolean,group_name:string }):Group{
+        //Map through our books and modify them accordingly.
+        const newBooks : {[key:string]: Book} = Object.fromEntries(Object.entries(this.books).map( ([book_name,book])=>{
+            return [book_name, isResourcePartiallySelected( [ group_name, book_name] ) ? 
+                book.setTestReservation( {reservedForTesting, isResourcePartiallySelected, group_name, book_name } ) :
+                book];
+        }));
+        return new Group( newBooks );
+    }
+
     static getListHeaders( scope:string ):string[]{
         if( scope == "Group" ) return ["Group", "Books" ];
         return ["Group"].concat( Book.getListHeaders(scope) );

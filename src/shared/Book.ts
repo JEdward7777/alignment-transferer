@@ -126,6 +126,16 @@ export default class Book {
         }
     }
 
+    setTestReservation( {reservedForTesting, isResourcePartiallySelected, group_name, book_name }: {reservedForTesting:boolean, isResourcePartiallySelected:( resourceKey: string[] )=>boolean,group_name:string,book_name:string }):Book{
+        //Map through our chapters and modify them accordingly.
+        const newChapters : {[key:number]: Chapter } = Object.fromEntries(Object.entries(this.chapters).map( ([chapter_number,chapter])=>{
+            return [chapter_number, isResourcePartiallySelected( [ group_name, book_name, chapter_number]) ?
+                chapter.setTestReservation( {reservedForTesting, isResourcePartiallySelected, group_name, book_name, chapter_number } ) :
+                chapter];
+        }));
+        return new Book( {chapters:newChapters, filename:this.filename, toc3Name:this.toc3Name, targetUsfmBook:this.targetUsfmBook, sourceUsfmBook:this.sourceUsfmBook} );
+    }
+
     static getListHeaders( scope:string ):string[]{
         if( scope == "Book" ) return ["Book", "Chapters"];
         return ["Book"].concat( Chapter.getListHeaders(scope) );

@@ -88,6 +88,19 @@ export default class Chapter {
         }
     }
 
+    setTestReservation( {reservedForTesting, isResourcePartiallySelected, group_name, book_name, chapter_number}: {reservedForTesting:boolean, isResourcePartiallySelected:( resourceKey: string[] )=>boolean, group_name:string, book_name:string, chapter_number:string }):Chapter{
+        //Map through our verses and modify them accordingly.
+        //It makes more sense to use isResourceSelected to grab the verses
+        //but isResourcePartiallySelected will do and is needed further up.
+        const newVerses : {[key:number]: Verse} = Object.fromEntries(Object.entries(this.verses).map( ([verse_number,verse])=>{
+            return [verse_number,isResourcePartiallySelected([group_name,book_name,chapter_number,verse_number]) ? 
+                verse.setTestReservation( reservedForTesting ) : 
+                verse];            
+        }));
+        //now return the new "me"
+        return new Chapter( newVerses, this.targetUsfm, this.sourceUsfm );
+    }
+
     /**
      * Retrieves the list headers based on the given scope.
      * The list is spreadsheet view of the program.

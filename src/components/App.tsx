@@ -16,6 +16,7 @@ import { TUsfmBook } from 'word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
 import { AbstractWordMapWrapper } from 'wordmapbooster/dist/boostwordmap_tools';
 import IndexedDBStorage from '@/shared/IndexedDBStorage';
+import TrainingMenu from './TrainingMenu';
 
 
 interface AppState {
@@ -569,6 +570,19 @@ const App: React.FC = () => {
   }
 
   /**
+   * Sets the test reservation flag.
+   * 
+   * @param flag - The flag indicating if selected verses are for testing instead of training.
+   */
+  const setTestReservationFlag = (flag: boolean) => {
+    // Create a new group collection with the updated test reservation flag
+    const newGroupCollection = groupCollection.setTestReservation({ reservedForTesting: flag, isResourcePartiallySelected });
+    
+    // Update the group collection state with the new collection
+    setGroupCollection(newGroupCollection);
+  }
+
+  /**
    * This function is called when the training checkbox is clicked.
    */
   const onToggleTraining = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -620,6 +634,10 @@ const App: React.FC = () => {
             onSaveSelectedFiles={onSaveSelectedFiles} 
             onRemoveSelectedResources={onRemoveSelectedResources}
             onRenameSelectedGroups={onRenameSelectedGroups} 
+            />
+            <TrainingMenu isTrainingEnabled={trainingState.isTrainingEnabled} 
+            setIsTrainingEnabled={setIsTrainingEnabled} 
+            setTestReservationFlag={setTestReservationFlag}
             />
             <AboutMenu />
           </ul>

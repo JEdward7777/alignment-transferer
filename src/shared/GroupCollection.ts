@@ -74,6 +74,16 @@ export default class GroupCollection {
             newGroupCollection: new GroupCollection(newGroups, this.instanceCount + 1) };
     }
 
+    setTestReservation( {reservedForTesting, isResourcePartiallySelected }: {reservedForTesting: boolean, isResourcePartiallySelected:( resourceKey: string[] )=>boolean} ): GroupCollection{
+        const newGroups: {[key: string]: Group } = Object.fromEntries( Object.entries(this.groups).map( ([group_name,group]:[string,Group]):[group_name:string,newGroup:Group] => {
+            const newGroup = isResourcePartiallySelected( [ group_name ] ) ? 
+                    group.setTestReservation( {reservedForTesting, isResourcePartiallySelected, group_name } ) : 
+                    group;
+            return [group_name,newGroup];
+        }));
+        return new GroupCollection(newGroups, this.instanceCount + 1);    
+    }
+
     static getListHeaders( scope:string ):string[]{
         return Group.getListHeaders(scope);
     }

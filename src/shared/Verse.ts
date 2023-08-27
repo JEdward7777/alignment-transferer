@@ -40,12 +40,14 @@ export default class Verse {
         newVerse.sourceVerse = null;
         newVerse.targetVerse = null;
         if( verse.state ) newVerse.state = verse.state;
+        if( verse.reservedForTesting !== undefined ) newVerse.reservedForTesting = verse.reservedForTesting;
         return newVerse;
     }
 
     toJSON(): any{
         return {
             state: this.state,
+            reservedForTesting: this.reservedForTesting
             //Don't export sourceVerse or targetVerse
             //because it is held at the book level in the json export.
         };
@@ -86,6 +88,14 @@ export default class Verse {
     addSourceUsfm( usfm_verse: TUsfmVerse ):Verse{
         const newVerse: Verse = this.clone();
         newVerse.sourceVerse = usfm_verse;
+
+        newVerse.state = newVerse.computeState();
+        return newVerse;
+    }
+
+    setTestReservation( reservedForTesting: boolean ):Verse{
+        const newVerse: Verse = this.clone();
+        newVerse.reservedForTesting = reservedForTesting;
 
         newVerse.state = newVerse.computeState();
         return newVerse;
