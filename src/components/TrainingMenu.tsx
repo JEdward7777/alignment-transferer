@@ -3,11 +3,13 @@ import React from 'react';
 
 interface TrainingMenuProps {
   isTrainingEnabled: boolean;
+  isTestingEnabled: boolean;
   setIsTrainingEnabled: (flag: boolean) => void;
+  setIsTestingEnabled: (flag: boolean) => void;
   setTestReservationFlag: (flag: boolean) => void;
 }
 
-const TrainingMenu: React.FC<TrainingMenuProps> = ({ isTrainingEnabled, setIsTrainingEnabled, setTestReservationFlag }) => {
+const TrainingMenu: React.FC<TrainingMenuProps> = ({ isTrainingEnabled, isTestingEnabled, setIsTrainingEnabled, setIsTestingEnabled, setTestReservationFlag }) => {
 
 
   return (
@@ -29,6 +31,12 @@ const TrainingMenu: React.FC<TrainingMenuProps> = ({ isTrainingEnabled, setIsTra
         <li>
             <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={()=>setTestReservationFlag(false)}>
                 Reserve selected for training
+            </a>
+        </li>
+
+        <li>
+            <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={()=>setIsTestingEnabled(!isTestingEnabled)}>
+                {isTrainingEnabled ? 'Disable Alignment Testing' : 'Enable Alignment Testing'}
             </a>
         </li>
       </ul>

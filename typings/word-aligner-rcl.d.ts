@@ -29,6 +29,11 @@ declare module 'word-aligner-rcl'{
         sourceNgram: TWord[];
         targetNgram: TWord[];
     }
+
+    export interface TSourceTargetSuggestion{
+        alignment: TSourceTargetAlignment;
+        confidence: number;
+    }
     
 
     interface TTopBottomAlignment{

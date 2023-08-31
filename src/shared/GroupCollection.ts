@@ -4,6 +4,7 @@ import Verse from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
 import { TSourceTargetAlignment, TUsfmBook } from "word-aligner-rcl";
 import JSZip from "jszip";
+import { TWordAlignmentTestResults } from "@/workers/AlignmentTester";
 
 export default class GroupCollection {
     groups: { [key: string]: Group };
@@ -251,15 +252,23 @@ export default class GroupCollection {
 
     /**
      * This function gets the alignment training data from this book.
+     * @param {boolean} forTesting - true if this is for testing
      * @return the alignment training data, with targetVerse, sourceVerse as strings and the alignments as TSourceTargetAlignment[]
      */
-    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
-        const alignmentTrainingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+    getAlignmentDataForTrainingOrTesting( { forTesting }: { forTesting:boolean } ):  { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+        const alignmentTrainingOrTestingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
         Object.entries(this.groups).forEach( ([group_name,group]: [string,Group])=>{
-            Object.entries(group.getAlignmentTrainingData()).forEach(([reference,alignment])=>{
-                alignmentTrainingData[`[${group_name}] ${reference}`] = alignment;
+            Object.entries(group.getAlignmentDataForTrainingOrTesting({ forTesting })).forEach(([reference,alignment])=>{
+                alignmentTrainingOrTestingData[`[${group_name}] ${reference}`] = alignment;
             })              
         });
-        return alignmentTrainingData;
+        return alignmentTrainingOrTestingData;
+    }
+
+    
+    addAlignmentTestResults( testResults:TWordAlignmentTestResults ): GroupCollection {
+        console.log( `addAlignmentTestResults: ${JSON.stringify(testResults)}` );
+        //TODOj: implement this;
+        return this;
     }
 }

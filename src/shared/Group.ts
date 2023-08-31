@@ -210,15 +210,16 @@ export default class Group {
 
     /**
      * This function gets the alignment training data from this book.
+     * @param {boolean} forTesting - true if this is for testing
      * @return the alignment training data
      */
-    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
-        const alignmentTrainingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+    getAlignmentDataForTrainingOrTesting( { forTesting }: { forTesting:boolean } ): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+        const alignmentTrainingOrTestingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
         Object.entries(this.books).forEach( ([book_name,book]: [string,Book])=>{
-            Object.entries(book.getAlignmentTrainingData()).forEach(([reference,alignment])=>{
-                alignmentTrainingData[`${book_name} ${reference}`] = alignment;
+            Object.entries(book.getAlignmentDataForTrainingOrTesting({ forTesting })).forEach(([reference,alignment])=>{
+                alignmentTrainingOrTestingData[`${book_name} ${reference}`] = alignment;
             })              
         });
-        return alignmentTrainingData;
+        return alignmentTrainingOrTestingData;
     }
 }

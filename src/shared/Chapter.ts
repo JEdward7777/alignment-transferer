@@ -214,16 +214,17 @@ export default class Chapter {
 
     /**
      * This function gets the alignment training data from this chapter.
+     * @param {boolean} forTesting - true if this is for testing
      * @return the alignment training data
      */
-    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+    getAlignmentDataForTrainingOrTesting( { forTesting }: { forTesting:boolean } ): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
         //This function need to modified when there is verse spanning alignments.
 
 
         //first filter down to only the verses which are set to a training state.
-        const versesForTraining = Object.fromEntries(Object.entries(this.verses).filter( ([verse_num,verse]:[string,Verse]) => verse.getVerseAlignmentStatus() == VerseState.AlignedTrain ));
+        const versesForTrainingOrTesting = Object.fromEntries(Object.entries(this.verses).filter( ([verse_num,verse]:[string,Verse]) => verse.getVerseAlignmentStatus() == (forTesting?VerseState.AlignedTest:VerseState.AlignedTrain) ));
         //now extract the source and target verses as strings as well as the alignments.
-        const result = Object.entries( versesForTraining ).reduce( (acc: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} , [verse_num,verse]:[string,Verse])=>{
+        const result = Object.entries( versesForTrainingOrTesting ).reduce( (acc: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} , [verse_num,verse]:[string,Verse])=>{
             acc[verse_num] = { targetVerse: verse.getTargetVerseAsString()!, sourceVerse: verse.getSourceVerseAsString()!, alignments: verse.getVerseAlignments()! };
             return acc;
         },{});

@@ -2,7 +2,6 @@ import {default as word_aligner_default} from "word-aligner";
 import _wordmapLexer, { Token } from "wordmap-lexer";
 import { TUsfmVerse, TWord, AlignmentHelpers, TUsfmHeader, TSourceTargetAlignment, TTopBottomAlignment } from "word-aligner-rcl";
 import { getOriginalLanguageListForVerseData, getAlignedWordListFromAlignments, updateAlignedWordsFromOriginalWordList } from 'word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';
-import { TWordAlignerAlignment } from "@/components/WordAlignerDialog";
 export function parseUsfmHeaders(headers_section: TUsfmHeader[]) {
     const parsed_headers: { [key: string]: string } = headers_section.reduce((acc: { [key: string]: string }, entry: { tag: string, content: string }) => {
         if (entry.tag && entry.content) {
@@ -152,7 +151,7 @@ export function extractAlignmentsFromTargetVerse_JSON(targetVerse: TUsfmVerse, s
   /**
  * merge alignments into target verse
  */
-export function mergeInAlignments(wordBankWords: TWord[], verseAlignments: TWordAlignerAlignment[], targetVerseObjects: TUsfmVerse ): TWord[] | null {
+export function mergeInAlignments(wordBankWords: TWord[], verseAlignments: TSourceTargetAlignment[], targetVerseObjects: TUsfmVerse ): TWord[] | null {
   const wordBank = wordBankWords.map(item => ({
     ...item,
     word: item.word || item.text,

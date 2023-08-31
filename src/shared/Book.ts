@@ -337,15 +337,16 @@ export default class Book {
 
     /**
      * This function gets the alignment training data from this chapter.
+     * @param {boolean} forTesting - true if this is for testing
      * @return the alignment training data
      */
-    getAlignmentTrainingData(): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
-        const alignmentTrainingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+    getAlignmentDataForTrainingOrTesting( { forTesting }: { forTesting:boolean } ): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+        const alignmentData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
         Object.entries(this.chapters).forEach( ([chapter_number,chapter]: [string,Chapter])=>{
-            Object.entries(chapter.getAlignmentTrainingData()).forEach(([verse_number,alignment])=>{
-                alignmentTrainingData[`${chapter_number}:${verse_number}`] = alignment;
+            Object.entries(chapter.getAlignmentDataForTrainingOrTesting( {forTesting} )).forEach(([verse_number,alignment])=>{
+                alignmentData[`${chapter_number}:${verse_number}`] = alignment;
             })              
         });
-        return alignmentTrainingData;
+        return alignmentData;
     }
 }

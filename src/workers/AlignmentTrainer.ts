@@ -3,7 +3,7 @@ import wordmapLexer, { Token } from "wordmap-lexer";
 import { Alignment, Ngram } from "wordmap";
 import { TSourceTargetAlignment } from "word-aligner-rcl";
 
-interface TWorkerData{
+interface TTrainingWorkerData{
   alignmentTrainingData: {
     [reference: string]: {
       sourceVerse: string; 
@@ -13,9 +13,9 @@ interface TWorkerData{
   }
 }
 
-self.addEventListener('message', (event: { data: TWorkerData }) => {
+self.addEventListener('message', (event: { data: TTrainingWorkerData }) => {
 
-  console.log("Worker has started");
+  console.log("Training worker has started");
 
 
   //Convert the data into the structure which the training model expects.
@@ -35,7 +35,6 @@ self.addEventListener('message', (event: { data: TWorkerData }) => {
   const wordAlignerModel = new MorphJLBoostWordMap({ targetNgramLength: 5, warnings: false, forceOccurrenceOrder:false, train_steps:1000 });
   wordAlignerModel.add_alignments_2(sourceVersesTokenized,targetVersesTokenized,alignments).then(()=>{
     
-    //TODO, need to pass the model back to the other side.
     self.postMessage({message:'Worker has finished', trainedModel:wordAlignerModel.save()});
   }).catch((error)=>{
     console.log(error);

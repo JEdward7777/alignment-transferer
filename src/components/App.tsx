@@ -12,11 +12,13 @@ import JSZip from "jszip";
 // @ts-ignore
 import usfm from 'usfm-js';
 import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog } from './WordAlignerDialog';
-import { TUsfmBook } from 'word-aligner-rcl';
+import { TSourceTargetAlignment, TSourceTargetSuggestion, TUsfmBook, TWord } from 'word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
 import { AbstractWordMapWrapper } from 'wordmapbooster/dist/boostwordmap_tools';
 import IndexedDBStorage from '@/shared/IndexedDBStorage';
 import TrainingMenu from './TrainingMenu';
+import { Token } from 'wordmap-lexer';
+import { Alignment, Ngram, Suggestion } from 'wordmap';
 
 
 interface AppState {
@@ -29,9 +31,12 @@ interface AppState {
 
 interface TrainingState{
   isTrainingEnabled: boolean; //This is true when the training checkbox is checked
+  isTestingEnabled: boolean; //This is true when the testing is enabled
   trainingStatusOutput: string; //Setting this shows up on the toolbar and lets the training have a place to give live output status.
   lastTrainedInstanceCount: number; //This lets us know if something has changed since last training by comparing it to groupCollection.instanceCount
   currentTrainingInstanceCount: number; //This keeps track of what is currently training so that when it finishes lastTrainedInstanceCount can be set.
+  lastTestAlignedCount: number; //This count keeps track of which alignment model count was last used to update test alignments.
+  currentTestingInstanceCount: number; //This keeps track of what is currently testing so that when it finishes lastTestAlignedCount can be set.
 }
 
 const translateDict : {[key:string]:string}= {
@@ -72,9 +77,12 @@ const App: React.FC = () => {
 
   const [trainingState, _setTrainingState] = useState<TrainingState>({
     isTrainingEnabled: false,
+    isTestingEnabled: false,
     trainingStatusOutput: "",
     lastTrainedInstanceCount: -1,
     currentTrainingInstanceCount: -1,
+    lastTestAlignedCount: -1,
+    currentTestingInstanceCount: -1,
   })
   const trainingStateRef = useRef<TrainingState>(trainingState);
   function setTrainingState( newState: TrainingState ) {
@@ -83,7 +91,8 @@ const App: React.FC = () => {
   }
 
 
-  const alignmentWorkerRef = useRef<Worker | null>(null);
+  const alignmentTrainingWorkerRef = useRef<Worker | null>(null);
+  const alignmentTestingWorkerRef  = useRef<Worker | null>(null);
 
   const {groupCollection, scope, currentSelection, doubleClickedVerse, alignerStatus } = state;
 
@@ -188,6 +197,10 @@ const App: React.FC = () => {
     setTrainingState( {...trainingStateRef.current, isTrainingEnabled: newIsTrainingEnabled } );
   }
 
+  const setIsTestingEnabled = (newIsTestingEnabled: boolean) => {
+    setTrainingState( {...trainingStateRef.current, isTestingEnabled: newIsTestingEnabled } );
+  }
+
   function startTraining(){
 
     //Use the Refs such as trainingStateRef instead of trainingState
@@ -200,11 +213,11 @@ const App: React.FC = () => {
 
     //make sure that lastUsedInstanceCount isn't still the same as groupCollection.instanceCount
     if( trainingStateRef.current.lastTrainedInstanceCount !== stateRef.current.groupCollection.instanceCount ){
-      if( alignmentWorkerRef.current === null ){
+      if( alignmentTrainingWorkerRef.current === null ){
 
         //before creating the worker, check to see if there is any data to train on.
         //get the information for the alignment to training.
-        const alignmentTrainingData = stateRef.current.groupCollection.getAlignmentTrainingData();
+        const alignmentTrainingData = stateRef.current.groupCollection.getAlignmentDataForTrainingOrTesting( {forTesting: false } );
 
         //check if there are enough entries in the alignment training data dictionary
         if( Object.values(alignmentTrainingData).length > 4 ){
@@ -213,13 +226,13 @@ const App: React.FC = () => {
           setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
 
           //create a new worker.
-          alignmentWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
+          alignmentTrainingWorkerRef.current = new Worker( new URL("../workers/AlignmentTrainer.ts", import.meta.url ) );
 
-          //Define the callback which will after the alignment trainer has finished
-          alignmentWorkerRef.current.addEventListener('message', (event) => {
-            console.log( `alignment worker message: ${event.data}` );
-            alignmentWorkerRef.current?.terminate();
-            alignmentWorkerRef.current = null;
+          //Define the callback which will be called after the alignment trainer has finished
+          alignmentTrainingWorkerRef.current.addEventListener('message', (event) => {
+            console.log( `alignment training worker message: ${event.data}` );
+            alignmentTrainingWorkerRef.current?.terminate();
+            alignmentTrainingWorkerRef.current = null;
 
 
             //Load the trained model and put it somewhere it can be used.
@@ -233,27 +246,87 @@ const App: React.FC = () => {
             setTrainingState( {...trainingStateRef.current, lastTrainedInstanceCount: trainingStateRef.current.currentTrainingInstanceCount } );
             //start the training again.  It won't run again if the instanceCount hasn't changed
             startTraining();
-          })
+          });
 
 
-          alignmentWorkerRef.current.postMessage({alignmentTrainingData});
+          alignmentTrainingWorkerRef.current.postMessage({alignmentTrainingData});
 
         }else{
           console.log( "Not enough training data" );
         }
           
       }else{
-        console.log("Alignment already running" );
+        console.log("Alignment training already running" );
       }
     }else{
       console.log( "information not changed" );
     }
   }
   function stopTraining(){
-    if( alignmentWorkerRef.current !== null ){
-      alignmentWorkerRef.current.terminate();
-      alignmentWorkerRef.current = null;
-      console.log( "Alignment stopped" );
+    if( alignmentTrainingWorkerRef.current !== null ){
+      alignmentTrainingWorkerRef.current.terminate();
+      alignmentTrainingWorkerRef.current = null;
+      console.log( "Alignment training stopped" );
+    }
+  }
+
+
+  function startTestAligning(){
+    //make sure that lastTestAlignedCount isn't the same as the lastTrainedInstanceCount
+    if( alignmentPredictor.current !== null && trainingStateRef.current.lastTestAlignedCount !== trainingStateRef.current.lastTrainedInstanceCount ){
+      if( alignmentTestingWorkerRef.current === null ){
+
+        //before creating the worker, check to see if there is any data to test on.
+        //get the information for the alignment to testing.
+        const alignmentTestingData = stateRef.current.groupCollection.getAlignmentDataForTrainingOrTesting( {forTesting: true } );
+
+        //check if there are enough entries in the alignment testing data dictionary
+        if( Object.values(alignmentTestingData).length > 1 ){
+          
+          console.log(`start aligning for ${trainingStateRef.current.lastTrainedInstanceCount}`);
+          setTrainingState( {...trainingStateRef.current, currentTestingInstanceCount: trainingStateRef.current.lastTrainedInstanceCount } );
+
+          //create a new worker.
+          alignmentTestingWorkerRef.current = new Worker( new URL("../workers/AlignmentTester.ts", import.meta.url ) ); //TODOj Make this file.
+
+          //Define the callback which will be called after the alignment tester has finished
+          alignmentTestingWorkerRef.current.addEventListener('message', (event) => {
+            console.log( `alignment testing worker message: ${event.data}` );
+            alignmentTestingWorkerRef.current?.terminate();
+            alignmentTestingWorkerRef.current = null;
+
+            //load the results and inject them into the group collection.
+            if( "results" in event.data ){
+              const newGroupCollection = stateRef.current.groupCollection.addAlignmentTestResults( event.data.results );
+              setGroupCollection( newGroupCollection );
+            }
+
+            //now update the testing state
+            setTrainingState( {...trainingStateRef.current, lastTestAlignedCount: trainingStateRef.current.currentTestingInstanceCount } );
+
+            //start the testing again, It won't run again if the lastTrainedInstanceCount hasn't changed
+            startTestAligning();
+          });
+
+          alignmentTestingWorkerRef.current.postMessage({alignmentTestingData, serializedTrainedModel: alignmentPredictor.current?.save() });
+
+        }else{
+          console.log( "Not enough testing data" );
+        }
+      }else{
+        console.log("Alignment testing already running" );
+      }      
+    }else{
+      
+      console.log( "trained model not changed" );
+    }
+  }
+
+  function stopTestAligning(){
+    if( alignmentTestingWorkerRef.current !== null ){
+      alignmentTestingWorkerRef.current.terminate();
+      alignmentTestingWorkerRef.current = null;
+      console.log( "Alignment testing stopped" );
     }
   }
 
@@ -266,10 +339,19 @@ const App: React.FC = () => {
     }
   }, [trainingState.isTrainingEnabled,groupCollection.instanceCount] );
 
+  //When the isTesting gets set call the startTestAligning function
+  useEffect( () => {
+    if( trainingStateRef.current.isTestingEnabled ) {
+      startTestAligning();
+    }else{
+      stopTestAligning();
+    }
+  })
+
   //Update the toolbar with the status of the training
   useEffect( () => {
     const newTrainingStatusOutput = 
-       (alignmentWorkerRef.current === null )? 
+       (alignmentTrainingWorkerRef.current === null )? 
          ((alignmentPredictor.current === null)? "Not trained" : "Trained"):
          ((alignmentPredictor.current === null)? "Training..." : "Updating...");
 
@@ -635,8 +717,11 @@ const App: React.FC = () => {
             onRemoveSelectedResources={onRemoveSelectedResources}
             onRenameSelectedGroups={onRenameSelectedGroups} 
             />
-            <TrainingMenu isTrainingEnabled={trainingState.isTrainingEnabled} 
+            <TrainingMenu 
+            isTrainingEnabled={trainingState.isTrainingEnabled} 
+            isTestingEnabled={trainingState.isTestingEnabled}
             setIsTrainingEnabled={setIsTrainingEnabled} 
+            setIsTestingEnabled={setIsTestingEnabled}
             setTestReservationFlag={setTestReservationFlag}
             />
             <AboutMenu />
