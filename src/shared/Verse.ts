@@ -1,5 +1,6 @@
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
 import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTargetString, extractAlignmentsFromTargetVerse_JSON } from "@/utils/usfm_misc";
+import { TWordAlignmentTestScore } from "@/workers/AlignmentTester";
 import { AlignmentHelpers, TUsfmVerse, TSourceTargetAlignment } from "word-aligner-rcl";
 
 export enum VerseState {
@@ -18,12 +19,17 @@ export default class Verse {
 
     reservedForTesting: boolean = false;
 
+    alignmentResults: TWordAlignmentTestScore | null = null;
+
+
+
     clone(): Verse{
         const result: Verse = new Verse();
         result.sourceVerse = this.sourceVerse;
         result.targetVerse = this.targetVerse;
         result.state = this.state;
         result.reservedForTesting = this.reservedForTesting;
+        result.alignmentResults = this.alignmentResults;
         return result;
     }
 
@@ -41,13 +47,15 @@ export default class Verse {
         newVerse.targetVerse = null;
         if( verse.state ) newVerse.state = verse.state;
         if( verse.reservedForTesting !== undefined ) newVerse.reservedForTesting = verse.reservedForTesting;
+        if( verse.alignmentResults !== undefined ) newVerse.alignmentResults = verse.alignmentResults;
         return newVerse;
     }
 
     toJSON(): any{
         return {
             state: this.state,
-            reservedForTesting: this.reservedForTesting
+            reservedForTesting: this.reservedForTesting,
+            alignmentResults: this.alignmentResults,
             //Don't export sourceVerse or targetVerse
             //because it is held at the book level in the json export.
         };
@@ -102,10 +110,14 @@ export default class Verse {
     }
 
     static getListHeaders():string[]{
-        return ["Verse","Status"];
+        return ["Verse","Status","Ratio Correct"];
     }
     getListInfo( verse_num: number ):{ data:string[], keys:string[] }[]{
-        return [{data:[ "" + verse_num, this.state ],keys:[""+verse_num]}];
+        return [{data:[ 
+            "" + verse_num, 
+            this.state, 
+            (this.state === VerseState.AlignedTest) ? "" + this.alignmentResults?.ratio_correct : "" 
+        ],keys:[""+verse_num]}];
     }
 
     getAlignmentState( chapter: number, verse: number ): TState | null{
@@ -186,5 +198,12 @@ export default class Verse {
         if( this.targetVerse == null ) return null;
         return extractAlignmentsFromTargetVerse_JSON( this.targetVerse, this.sourceVerse).alignments;
     }
+
+    addAlignmentTestResults( testResults: TWordAlignmentTestScore ): Verse{
+        const newVerse = this.clone();
+        newVerse.alignmentResults = testResults;
+        return newVerse;
+    }
     
 }
+

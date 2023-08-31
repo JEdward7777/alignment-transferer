@@ -297,8 +297,11 @@ const App: React.FC = () => {
 
             //load the results and inject them into the group collection.
             if( "results" in event.data ){
-              const newGroupCollection = stateRef.current.groupCollection.addAlignmentTestResults( event.data.results );
+              const newGroupCollection = stateRef.current.groupCollection.addAlignmentTestResults( event.data.results.testResults );
               setGroupCollection( newGroupCollection );
+            }
+            if( "error" in event.data ){
+              console.log( "Error running alignment tester: " + event.data.error );
             }
 
             //now update the testing state

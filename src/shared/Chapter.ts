@@ -2,6 +2,12 @@ import { is_number } from "@/utils/usfm_misc";
 import Verse, { VerseState } from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
 import { TSourceTargetAlignment, TUsfmChapter, TUsfmVerse } from "word-aligner-rcl";
+import { TWordAlignmentTestScore } from "@/workers/AlignmentTester";
+
+
+export interface TChapterTestResults{
+    [key:number]: TWordAlignmentTestScore;
+}
 
 export default class Chapter {
     verses: { [key: number]: Verse };
@@ -229,5 +235,14 @@ export default class Chapter {
             return acc;
         },{});
         return result;
+    }
+
+
+    addRestructuredAlignmentTestResults( testResults: TChapterTestResults ): Chapter{
+        const newVerses = Object.fromEntries(Object.entries(this.verses).map(([verse_number,verse]:[string,Verse])=>{
+            if( !(verse_number in testResults) ) return [verse_number,verse];
+            return [verse_number,verse.addAlignmentTestResults( testResults[parseInt(verse_number)] )];
+        }));
+        return new Chapter( newVerses, this.targetUsfm, this.sourceUsfm );
     }
 }

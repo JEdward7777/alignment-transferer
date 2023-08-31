@@ -1,10 +1,15 @@
-import Group from "./Group";
+import Group, { TGroupTestResults } from "./Group";
 import {parseUsfmHeaders} from "../utils/usfm_misc";
 import Verse from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
 import { TSourceTargetAlignment, TUsfmBook } from "word-aligner-rcl";
 import JSZip from "jszip";
-import { TWordAlignmentTestResults } from "@/workers/AlignmentTester";
+import { TWordAlignmentTestResults, TWordAlignmentTestScore } from "@/workers/AlignmentTester";
+
+export interface TGroupCollectionTestResults{
+    [key:string]: TGroupTestResults
+}
+
 
 export default class GroupCollection {
     groups: { [key: string]: Group };
@@ -265,10 +270,70 @@ export default class GroupCollection {
         return alignmentTrainingOrTestingData;
     }
 
-    
-    addAlignmentTestResults( testResults:TWordAlignmentTestResults ): GroupCollection {
+    parseReference(reference: string): { group: string, book: string, chapter: number, verse: number } | null {
+        const regex = /^\[(\w+)\]\s+(\w+)\s+(\d+):(\d+)$/;
+        const match = reference.match(regex);
+        
+        if (match) {
+            const [, group, book, chapterStr, verseStr] = match;
+            const chapter = parseInt(chapterStr, 10);
+            const verse = parseInt(verseStr, 10);
+        
+            if (!isNaN(chapter) && !isNaN(verse)) {
+                return {
+                    group,
+                    book,
+                    chapter,
+                    verse,
+                };
+            }
+        }
+        
+        return null; // Return null for invalid references
+    }
+
+    /**
+     * This function adds test results to the class structure so that the results
+     * can be displayed in the UI.
+     * @param testResults 
+     * @returns 
+     */
+    addAlignmentTestResults( testResults:TWordAlignmentTestScore ): GroupCollection {
         console.log( `addAlignmentTestResults: ${JSON.stringify(testResults)}` );
-        //TODOj: implement this;
-        return this;
+
+        const restructuredTestResults: TGroupCollectionTestResults = {};
+
+        Object.entries(testResults).forEach(([reference, score])=>{
+            const fullParse = this.parseReference(reference);
+            if( fullParse ){
+                const { group, book, chapter, verse } = fullParse;
+                if( !(group in restructuredTestResults) ){
+                    restructuredTestResults[group] = {};
+                }
+                const groupResult = restructuredTestResults[group];
+                if( !(book in groupResult) ){
+                    groupResult[book] = {};
+                }
+                const bookResult = groupResult[book];
+                if( !(chapter in bookResult) ){
+                    bookResult[chapter] = {};
+                }
+                const chapterResult = bookResult[chapter];
+                chapterResult[verse] = score;
+            }
+        });
+
+        //Now filter through our groups to stuffs the information in.
+        const newGroups = Object.fromEntries(Object.entries(this.groups).map(([group_name,group]:[string,Group])=>{
+            if( !(group_name in restructuredTestResults) ) return [group_name,group];
+            return [group_name,group.addRestructuredAlignmentTestResults( restructuredTestResults[group_name] )];
+        }));
+
+        //do not increment the instance count
+        //because it will trigger a new train which will then
+        //trigger a new test which then will call this again.
+        //Basically do not increment the instanceCount if something hasn't
+        //changed which impacts the training.
+        return new GroupCollection(newGroups, this.instanceCount);
     }
 }

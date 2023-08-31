@@ -1,4 +1,4 @@
-import Chapter from './Chapter';
+import Chapter, { TChapterTestResults } from './Chapter';
 import { is_number } from '@/utils/usfm_misc';
 import Verse from './Verse';
 import { TState, TWordAlignerAlignmentResult } from '@/components/WordAlignerDialog';
@@ -8,6 +8,9 @@ import JSZip from 'jszip';
 // @ts-ignore
 import usfm from 'usfm-js';
 
+export interface TBookTestResults{
+    [key:number]: TChapterTestResults
+}
 
 export default class Book {
     chapters: { [key: number]: Chapter };
@@ -349,4 +352,13 @@ export default class Book {
         });
         return alignmentData;
     }
+
+    addRestructuredAlignmentTestResults( testResults: TBookTestResults ): Book{
+        const newChapters = Object.fromEntries(Object.entries(this.chapters).map(([chapter_number,chapter]:[string,Chapter])=>{
+            if( !(chapter_number in testResults) ) return [chapter_number,chapter];
+            return [chapter_number,chapter.addRestructuredAlignmentTestResults( testResults[parseInt(chapter_number)] )];
+        }));
+        return new Book( {chapters:newChapters,filename:this.filename, toc3Name:this.toc3Name, targetUsfmBook:this.targetUsfmBook, sourceUsfmBook:this.sourceUsfmBook} );
+    }
+
 }

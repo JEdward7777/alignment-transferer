@@ -1,9 +1,14 @@
 import { is_number, parseUsfmHeaders } from "@/utils/usfm_misc";
-import Book from "./Book";
+import Book, { TBookTestResults } from "./Book";
 import Verse from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
 import { TSourceTargetAlignment, TUsfmBook, TUsfmChapter } from "word-aligner-rcl";
 import JSZip from "jszip";
+
+
+export interface TGroupTestResults{
+    [key:string]: TBookTestResults
+}
 
 export default class Group {
     books: { [key: string]: Book };
@@ -221,5 +226,14 @@ export default class Group {
             })              
         });
         return alignmentTrainingOrTestingData;
+    }
+
+
+    addRestructuredAlignmentTestResults( testResults:  TGroupTestResults ): Group {
+        const newBooks = Object.fromEntries(Object.entries(this.books).map(([book_name,book]:[string,Book])=>{
+            if( !(book_name in testResults) ) return [book_name,book];
+            return [book_name,book.addRestructuredAlignmentTestResults( testResults[book_name] )];
+        }));
+        return new Group( newBooks );
     }
 }
