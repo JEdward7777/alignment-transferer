@@ -19,6 +19,7 @@ import IndexedDBStorage from '@/shared/IndexedDBStorage';
 import TrainingMenu from './TrainingMenu';
 import { Token } from 'wordmap-lexer';
 import { Alignment, Ngram, Suggestion } from 'wordmap';
+import { TWordAlignmentTestResults } from '@/workers/AlignmentTester';
 
 
 interface AppState {
@@ -37,6 +38,7 @@ interface TrainingState{
   currentTrainingInstanceCount: number; //This keeps track of what is currently training so that when it finishes lastTrainedInstanceCount can be set.
   lastTestAlignedCount: number; //This count keeps track of which alignment model count was last used to update test alignments.
   currentTestingInstanceCount: number; //This keeps track of what is currently testing so that when it finishes lastTestAlignedCount can be set.
+  testResults: TWordAlignmentTestResults | null; //This holds the last results which were returned from the testing thread.
 }
 
 const translateDict : {[key:string]:string}= {
@@ -281,7 +283,7 @@ const App: React.FC = () => {
         const alignmentTestingData = stateRef.current.groupCollection.getAlignmentDataForTrainingOrTesting( {forTesting: true } );
 
         //check if there are enough entries in the alignment testing data dictionary
-        if( Object.values(alignmentTestingData).length > 1 ){
+        if( Object.values(alignmentTestingData).length > 0 ){
           
           console.log(`start aligning for ${trainingStateRef.current.lastTrainedInstanceCount}`);
           setTrainingState( {...trainingStateRef.current, currentTestingInstanceCount: trainingStateRef.current.lastTrainedInstanceCount } );
@@ -305,7 +307,7 @@ const App: React.FC = () => {
             }
 
             //now update the testing state
-            setTrainingState( {...trainingStateRef.current, lastTestAlignedCount: trainingStateRef.current.currentTestingInstanceCount } );
+            setTrainingState( {...trainingStateRef.current, lastTestAlignedCount: trainingStateRef.current.currentTestingInstanceCount, testResults: event.data?.results || null } );
 
             //start the testing again, It won't run again if the lastTrainedInstanceCount hasn't changed
             startTestAligning();
@@ -315,6 +317,9 @@ const App: React.FC = () => {
 
         }else{
           console.log( "Not enough testing data" );
+          if( trainingStateRef.current.testResults !== null ){
+            setTrainingState( {...trainingStateRef.current, testResults: null } );
+          }
         }
       }else{
         console.log("Alignment testing already running" );
@@ -353,10 +358,20 @@ const App: React.FC = () => {
 
   //Update the toolbar with the status of the training
   useEffect( () => {
-    const newTrainingStatusOutput = 
+    const trainerStatus = 
        (alignmentTrainingWorkerRef.current === null )? 
          ((alignmentPredictor.current === null)? "Not trained" : "Trained"):
          ((alignmentPredictor.current === null)? "Training..." : "Updating...");
+
+    const testingStatus =
+       (alignmentTestingWorkerRef.current === null )?
+         ((trainingStateRef.current.testResults == undefined)? "" : `${trainingStateRef.current.testResults.average_ratio_correct.toFixed(4)} avg`):
+         ((trainingStateRef.current.testResults == undefined)? "Testing..." : `${trainingStateRef.current.testResults.average_ratio_correct.toFixed(4)} avg ...` );
+
+    const newTrainingStatusOutput = `${trainerStatus} ${testingStatus}`;
+
+    //javascript equivalents matrix:
+    //https://www.geeksforgeeks.org/advanced-javascript-backend-basics/
 
     //now make sure it is changed before setting it to prevent a loop.
     if( newTrainingStatusOutput != trainingStateRef.current.trainingStatusOutput ){
