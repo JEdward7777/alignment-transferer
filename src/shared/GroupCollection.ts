@@ -2,9 +2,9 @@ import Group, { TGroupTestResults } from "./Group";
 import {parseUsfmHeaders} from "../utils/usfm_misc";
 import Verse from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { TSourceTargetAlignment, TUsfmBook } from "word-aligner-rcl";
+import { TSourceTargetAlignment, TUsfmBook, TWord } from "word-aligner-rcl";
 import JSZip from "jszip";
-import { TWordAlignmentTestResults, TWordAlignmentTestScore } from "@/workers/AlignmentTester";
+import { TTrainingAndTestingData, TWordAlignmentTestScore } from "@/workers/WorkerComTypes";
 
 export interface TGroupCollectionTestResults{
     [key:string]: TGroupTestResults
@@ -260,14 +260,23 @@ export default class GroupCollection {
      * @param {boolean} forTesting - true if this is for testing
      * @return the alignment training data, with targetVerse, sourceVerse as strings and the alignments as TSourceTargetAlignment[]
      */
-    getAlignmentDataForTrainingOrTesting( { forTesting }: { forTesting:boolean } ):  { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
-        const alignmentTrainingOrTestingData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+    getAlignmentDataAndCorpusForTrainingOrTesting( { forTesting, getCorpus }: { forTesting:boolean, getCorpus: boolean } ): TTrainingAndTestingData {
+        const alignments: { [key: string]: { targetVerse: TWord[], sourceVerse: TWord[], alignments:TSourceTargetAlignment[] }} = {};
+        const corpus: { [key: string]: { sourceTokens: TWord[], targetTokens: TWord[] }} = {};
+        
         Object.entries(this.groups).forEach( ([group_name,group]: [string,Group])=>{
-            Object.entries(group.getAlignmentDataForTrainingOrTesting({ forTesting })).forEach(([reference,alignment])=>{
-                alignmentTrainingOrTestingData[`[${group_name}] ${reference}`] = alignment;
-            })              
+            const subResults = group.getAlignmentDataAndCorpusForTrainingOrTesting( {forTesting,getCorpus} );
+            Object.entries(subResults.alignments).forEach(([reference,alignment])=>{
+                alignments[`[${group_name}] ${reference}`] = alignment;
+            });
+            Object.entries(subResults.corpus).forEach(([reference,subCorpus])=>{
+                corpus[`[${group_name}] ${reference}`] = subCorpus;
+            })         
         });
-        return alignmentTrainingOrTestingData;
+        return {
+            alignments,
+            corpus,
+        };
     }
 
     parseReference(reference: string): { group: string, book: string, chapter: number, verse: number } | null {

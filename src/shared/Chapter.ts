@@ -1,8 +1,8 @@
 import { is_number } from "@/utils/usfm_misc";
 import Verse, { VerseState } from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { TSourceTargetAlignment, TUsfmChapter, TUsfmVerse } from "word-aligner-rcl";
-import { TWordAlignmentTestScore } from "@/workers/AlignmentTester";
+import { TSourceTargetAlignment, TUsfmChapter, TUsfmVerse, TWord } from "word-aligner-rcl";
+import { TTrainingAndTestingData, TWordAlignmentTestScore } from "@/workers/WorkerComTypes";
 
 
 export interface TChapterTestResults{
@@ -221,20 +221,38 @@ export default class Chapter {
     /**
      * This function gets the alignment training data from this chapter.
      * @param {boolean} forTesting - true if this is for testing
+     * @param {boolean} getCorpus - true if this should include corpus
      * @return the alignment training data
      */
-    getAlignmentDataForTrainingOrTesting( { forTesting }: { forTesting:boolean } ): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
+    getAlignmentDataAndCorpusForTrainingOrTesting( { forTesting, getCorpus }: { forTesting:boolean, getCorpus: boolean } ): TTrainingAndTestingData {
         //This function need to modified when there is verse spanning alignments.
+        const alignmentSelectedVerses : { [key: number]: Verse } = {};
+        const corpusSelectedVerses    : { [key: number]: Verse } = {};
 
+        Object.entries(this.verses).forEach(([verse_number,verse]:[string,Verse])=>{
+           //First test if this is for the training or testing which will make it for an alignment.
+           if( verse.getVerseAlignmentStatus() == (forTesting?VerseState.AlignedTest:VerseState.AlignedTrain) ){
+               alignmentSelectedVerses[parseInt(verse_number)] = verse;
+           }else if( getCorpus ){
+               corpusSelectedVerses[parseInt(verse_number)] = verse;
+           }
+        });
 
-        //first filter down to only the verses which are set to a training state.
-        const versesForTrainingOrTesting = Object.fromEntries(Object.entries(this.verses).filter( ([verse_num,verse]:[string,Verse]) => verse.getVerseAlignmentStatus() == (forTesting?VerseState.AlignedTest:VerseState.AlignedTrain) ));
         //now extract the source and target verses as strings as well as the alignments.
-        const result = Object.entries( versesForTrainingOrTesting ).reduce( (acc: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} , [verse_num,verse]:[string,Verse])=>{
-            acc[verse_num] = { targetVerse: verse.getTargetVerseAsString()!, sourceVerse: verse.getSourceVerseAsString()!, alignments: verse.getVerseAlignments()! };
+        const alignments = Object.entries( alignmentSelectedVerses ).reduce( (acc: { [key: string]: { targetVerse: TWord[], sourceVerse: TWord[], alignments:TSourceTargetAlignment[] }} , [verse_num,verse]:[string,Verse])=>{
+            acc[verse_num] = { targetVerse: verse.getTargetVerseAsTWords()!, sourceVerse: verse.getSourceVerseAsTWords()!, alignments: verse.getVerseAlignments()! };
             return acc;
         },{});
-        return result;
+
+        const corpus = Object.entries( corpusSelectedVerses ).reduce( (acc: { [key: string]: { targetTokens: TWord[], sourceTokens: TWord[] }} , [verse_num,verse]:[string,Verse])=>{
+            acc[verse_num] = { targetTokens: verse.getTargetVerseAsTWords()!, sourceTokens: verse.getSourceVerseAsTWords()! };
+            return acc;
+        },{});
+
+        return {
+            alignments,
+            corpus,
+        };
     }
 
 

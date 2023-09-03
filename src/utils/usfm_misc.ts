@@ -40,13 +40,31 @@ function convertOccurrences(wordList: TWord[]) {
     return wordList_;
   }
   
-
+  /**
+   * Converts target or source verse objects into the text of the verse including punctuation.
+   * @param verseObjects The verse objects from the usfm.
+   * @returns String representing the target or source verse
+   */
   export function verseObjectsToTargetString( verseObjects: TWord[] ): string{
     let result: string = verseObjects.map( (word: TWord):string => {
       if( word.type == "text" || word.type == "word" ) return word.text || word.word || "";
       if( word.type == "milestone" && word.children != undefined ) return verseObjectsToTargetString( word.children );
       return "";
     }).reduce( (previousValue: string, currentValue: string ): string => previousValue.concat( currentValue ) );
+    return result;
+  }
+
+  /**
+   * Converts target or source verse objects from usfm into TWord[] of just the words.
+   * @param verseObjects the source or target usfm
+   * @returns The tokens in TWord[] format of just the words.
+   */
+  export function verseObjectsToTWordTokens( verseObjects: TWord[] ): TWord[]{
+    let result: TWord[] = verseObjects.reduce( (acc : TWord[], curr: TWord): TWord[] => {
+      if( curr.type == "word" ) acc.push( curr );
+      if( curr.type == "milestone" && curr.children != undefined ) acc = acc.concat( verseObjectsToTWordTokens( curr.children ) );
+      return acc;
+    }, [] );
     return result;
   }
 

@@ -36,7 +36,7 @@ const TrainingMenu: React.FC<TrainingMenuProps> = ({ isTrainingEnabled, isTestin
 
         <li>
             <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={()=>setIsTestingEnabled(!isTestingEnabled)}>
-                {isTrainingEnabled ? 'Disable Alignment Testing' : 'Enable Alignment Testing'}
+                {isTestingEnabled ? 'Disable Alignment Testing' : 'Enable Alignment Testing'}
             </a>
         </li>
       </ul>

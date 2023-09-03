@@ -2,11 +2,12 @@ import Chapter, { TChapterTestResults } from './Chapter';
 import { is_number } from '@/utils/usfm_misc';
 import Verse from './Verse';
 import { TState, TWordAlignerAlignmentResult } from '@/components/WordAlignerDialog';
-import { TSourceTargetAlignment, TUsfmBook, TUsfmChapter } from 'word-aligner-rcl';
+import { TSourceTargetAlignment, TUsfmBook, TUsfmChapter, TWord } from 'word-aligner-rcl';
 import { deepClone } from '@/utils/load_file';
 import JSZip from 'jszip';
 // @ts-ignore
 import usfm from 'usfm-js';
+import { TTrainingAndTestingData } from '@/workers/WorkerComTypes';
 
 export interface TBookTestResults{
     [key:number]: TChapterTestResults
@@ -338,19 +339,23 @@ export default class Book {
         return new Book( {chapters:newChapters,filename:this.filename,toc3Name:this.toc3Name,targetUsfmBook:newTargetUsfmBook, sourceUsfmBook:newSourceUsfmBook } );
     }
 
-    /**
-     * This function gets the alignment training data from this chapter.
-     * @param {boolean} forTesting - true if this is for testing
-     * @return the alignment training data
-     */
-    getAlignmentDataForTrainingOrTesting( { forTesting }: { forTesting:boolean } ): { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} {
-        const alignmentData: { [key: string]: { targetVerse: string, sourceVerse: string, alignments:TSourceTargetAlignment[] }} = {};
+   
+    getAlignmentDataAndCorpusForTrainingOrTesting( { forTesting, getCorpus }: { forTesting:boolean, getCorpus: boolean } ): TTrainingAndTestingData {
+        const alignments: { [key: string]: { targetVerse: TWord[], sourceVerse: TWord[], alignments:TSourceTargetAlignment[] }} = {};
+        const corpus: { [key: string]: { sourceTokens: TWord[], targetTokens: TWord[] }} = {};
         Object.entries(this.chapters).forEach( ([chapter_number,chapter]: [string,Chapter])=>{
-            Object.entries(chapter.getAlignmentDataForTrainingOrTesting( {forTesting} )).forEach(([verse_number,alignment])=>{
-                alignmentData[`${chapter_number}:${verse_number}`] = alignment;
-            })              
+            const chapterResults = chapter.getAlignmentDataAndCorpusForTrainingOrTesting( {forTesting,getCorpus} );
+            Object.entries(chapterResults.alignments).forEach(([verse_number,alignment])=>{
+                alignments[`${chapter_number}:${verse_number}`] = alignment;
+            });
+            Object.entries(chapterResults.corpus).forEach(([verse_number,subCorpus])=>{
+                corpus[`${chapter_number}:${verse_number}`] = subCorpus;
+            })
         });
-        return alignmentData;
+        return {
+            alignments,
+            corpus,
+        };
     }
 
     addRestructuredAlignmentTestResults( testResults: TBookTestResults ): Book{

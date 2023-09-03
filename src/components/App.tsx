@@ -19,7 +19,7 @@ import IndexedDBStorage from '@/shared/IndexedDBStorage';
 import TrainingMenu from './TrainingMenu';
 import { Token } from 'wordmap-lexer';
 import { Alignment, Ngram, Suggestion } from 'wordmap';
-import { TWordAlignmentTestResults } from '@/workers/AlignmentTester';
+import { TTestingWorkerData, TWordAlignmentTestResults } from '@/workers/WorkerComTypes';
 
 
 interface AppState {
@@ -85,6 +85,7 @@ const App: React.FC = () => {
     currentTrainingInstanceCount: -1,
     lastTestAlignedCount: -1,
     currentTestingInstanceCount: -1,
+    testResults: null,
   })
   const trainingStateRef = useRef<TrainingState>(trainingState);
   function setTrainingState( newState: TrainingState ) {
@@ -219,10 +220,10 @@ const App: React.FC = () => {
 
         //before creating the worker, check to see if there is any data to train on.
         //get the information for the alignment to training.
-        const alignmentTrainingData = stateRef.current.groupCollection.getAlignmentDataForTrainingOrTesting( {forTesting: false } );
+        const alignmentTrainingData = stateRef.current.groupCollection.getAlignmentDataAndCorpusForTrainingOrTesting( {forTesting: false, getCorpus:true} );
 
         //check if there are enough entries in the alignment training data dictionary
-        if( Object.values(alignmentTrainingData).length > 4 ){
+        if( Object.values(alignmentTrainingData.alignments).length > 4 ){
 
           console.log(`start training for ${stateRef.current.groupCollection.instanceCount}`);
           setTrainingState( {...trainingStateRef.current, currentTrainingInstanceCount: stateRef.current.groupCollection.instanceCount } );
@@ -251,7 +252,7 @@ const App: React.FC = () => {
           });
 
 
-          alignmentTrainingWorkerRef.current.postMessage({alignmentTrainingData});
+          alignmentTrainingWorkerRef.current.postMessage( alignmentTrainingData );
 
         }else{
           console.log( "Not enough training data" );
@@ -280,16 +281,16 @@ const App: React.FC = () => {
 
         //before creating the worker, check to see if there is any data to test on.
         //get the information for the alignment to testing.
-        const alignmentTestingData = stateRef.current.groupCollection.getAlignmentDataForTrainingOrTesting( {forTesting: true } );
+        const alignmentTestingData = stateRef.current.groupCollection.getAlignmentDataAndCorpusForTrainingOrTesting( {forTesting: true, getCorpus:false } );
 
         //check if there are enough entries in the alignment testing data dictionary
-        if( Object.values(alignmentTestingData).length > 0 ){
+        if( Object.values(alignmentTestingData.alignments).length > 0 ){
           
           console.log(`start aligning for ${trainingStateRef.current.lastTrainedInstanceCount}`);
           setTrainingState( {...trainingStateRef.current, currentTestingInstanceCount: trainingStateRef.current.lastTrainedInstanceCount } );
 
           //create a new worker.
-          alignmentTestingWorkerRef.current = new Worker( new URL("../workers/AlignmentTester.ts", import.meta.url ) ); //TODOj Make this file.
+          alignmentTestingWorkerRef.current = new Worker( new URL("../workers/AlignmentTester.ts", import.meta.url ) );
 
           //Define the callback which will be called after the alignment tester has finished
           alignmentTestingWorkerRef.current.addEventListener('message', (event) => {
@@ -302,7 +303,7 @@ const App: React.FC = () => {
               const newGroupCollection = stateRef.current.groupCollection.addAlignmentTestResults( event.data.results.testResults );
               setGroupCollection( newGroupCollection );
             }
-            if( "error" in event.data ){
+            if( "error" in event.data && event.data.error !== null ){
               console.log( "Error running alignment tester: " + event.data.error );
             }
 
@@ -313,7 +314,12 @@ const App: React.FC = () => {
             startTestAligning();
           });
 
-          alignmentTestingWorkerRef.current.postMessage({alignmentTestingData, serializedTrainedModel: alignmentPredictor.current?.save() });
+          const dataForTestingThread: TTestingWorkerData = {
+            data: alignmentTestingData,
+            serializedModel: alignmentPredictor.current.save(),
+          }
+
+          alignmentTestingWorkerRef.current.postMessage(dataForTestingThread);
 
         }else{
           console.log( "Not enough testing data" );

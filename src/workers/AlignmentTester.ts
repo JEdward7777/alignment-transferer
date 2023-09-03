@@ -1,33 +1,10 @@
-import { AbstractWordMapWrapper, MorphJLBoostWordMap } from "wordmapbooster/dist/boostwordmap_tools";
-import { is_correct_prediction } from "wordmapbooster/dist/wordmap_tools";
-import wordmapLexer, { Token } from "wordmap-lexer";
+import { AbstractWordMapWrapper } from "wordmapbooster/dist/boostwordmap_tools";
+import { is_correct_prediction, updateTokenLocations } from "wordmapbooster/dist/wordmap_tools";
+import { Token } from "wordmap-lexer";
 import { Alignment, Ngram, Suggestion } from "wordmap";
-import { TSourceTargetAlignment } from "word-aligner-rcl";
+import { TTestingWorkerData } from "./WorkerComTypes";
 
-interface TTestingWorkerData{
-  alignmentTestingData: {
-    [reference: string]: {
-      sourceVerse: string; 
-      targetVerse: string;
-      alignments: TSourceTargetAlignment[];
-    }
-  },
-  serializedTrainedModel: {
-    [key: string]: any;
-  };
-}
 
-export interface TWordAlignmentTestScore{
-  num_manual_mappings: number;
-  num_suggested_mappings: number;
-  num_correct_mappings: number;
-  ratio_correct: number;
-}
-
-export interface TWordAlignmentTestResults{
-  testResults: {[reference: string]: TWordAlignmentTestScore };
-  average_ratio_correct: number;
-}
 
 //TODOj need to make the sending side send the serialized model.
 
@@ -40,16 +17,20 @@ self.addEventListener('message', (event: { data: TTestingWorkerData }) => {
   const sourceVersesTokenized : {[reference: string]: Token[] } = {};
   const targetVersesTokenized : {[reference: string]: Token[] } = {};
   const refToAlignments: {[reference: string]: Alignment[] } = {};
-  Object.entries(event.data.alignmentTestingData).forEach(([reference,training_data])=>{
-    sourceVersesTokenized[reference] = wordmapLexer.tokenize(training_data.sourceVerse);
-    targetVersesTokenized[reference] = wordmapLexer.tokenize(training_data.targetVerse);
+  Object.entries(event.data.data.alignments).forEach(([reference,training_data])=>{
+    // sourceVersesTokenized[reference] = wordmapLexer.tokenize(training_data.sourceVerse);
+    // targetVersesTokenized[reference] = wordmapLexer.tokenize(training_data.targetVerse);
+    sourceVersesTokenized[reference] = training_data.sourceVerse.map( n => new Token(n) );
+    targetVersesTokenized[reference] = training_data.targetVerse.map( n => new Token(n) );
+    updateTokenLocations(sourceVersesTokenized[reference])
+    updateTokenLocations(targetVersesTokenized[reference])
     refToAlignments[reference] = training_data.alignments.map(alignment=>new Alignment( new Ngram( alignment.sourceNgram.map( n => new Token(n) ) ), new Ngram( alignment.targetNgram.map( n => new Token(n) )  ) ) );
   });
 
 
   //Restore the trained model.
   try{
-    const wordAlignerModel = AbstractWordMapWrapper.load( event.data.serializedTrainedModel );
+    const wordAlignerModel = AbstractWordMapWrapper.load( event.data.serializedModel );
 
 
     //now need to run the alignments on all the test data and collect statistics on how correct the results are.

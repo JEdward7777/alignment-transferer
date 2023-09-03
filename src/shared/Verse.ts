@@ -1,7 +1,7 @@
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTargetString, extractAlignmentsFromTargetVerse_JSON } from "@/utils/usfm_misc";
-import { TWordAlignmentTestScore } from "@/workers/AlignmentTester";
-import { AlignmentHelpers, TUsfmVerse, TSourceTargetAlignment } from "word-aligner-rcl";
+import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTargetString, verseObjectsToTWordTokens, extractAlignmentsFromTargetVerse_JSON } from "@/utils/usfm_misc";
+import { TWordAlignmentTestScore } from "@/workers/WorkerComTypes";
+import { AlignmentHelpers, TUsfmVerse, TSourceTargetAlignment, TWord } from "word-aligner-rcl";
 
 export enum VerseState {
     NoSource = "no-source",
@@ -167,6 +167,17 @@ export default class Verse {
     getSourceVerseAsString():string|null{
         if( this.sourceVerse == null ) return null;
         return verseObjectsToTargetString( this.sourceVerse.verseObjects );
+    }
+
+
+    getSourceVerseAsTWords(): TWord[]{  
+        if( this.sourceVerse == null ) return [];
+        return verseObjectsToTWordTokens( this.sourceVerse.verseObjects );
+    }
+
+    getTargetVerseAsTWords(): TWord[]{
+        if( this.targetVerse == null ) return [];
+        return verseObjectsToTWordTokens( this.targetVerse.verseObjects );
     }
 
     /**
