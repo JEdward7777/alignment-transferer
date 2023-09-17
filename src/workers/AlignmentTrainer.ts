@@ -23,7 +23,7 @@ self.addEventListener('message', (event: { data: TTrainingAndTestingData }) => {
     updateTokenLocations(sourceVersesTokenized[reference])
     updateTokenLocations(targetVersesTokenized[reference])
 
-    //TODOj: need to make sure the tokens here have position information in them.
+    
     alignments[reference] = training_data.alignments.map(alignment=>new Alignment( new Ngram( alignment.sourceNgram.map( n => new Token(n) ) ), new Ngram( alignment.targetNgram.map( n => new Token(n) )  ) ) );
   });
 
@@ -58,4 +58,4 @@ self.addEventListener('message', (event: { data: TTrainingAndTestingData }) => {
 
 });
 
-//TODOj: I am going to need to modify the wordmap saver restorer to keep the information from learning corpus.
+

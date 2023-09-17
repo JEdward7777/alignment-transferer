@@ -48,6 +48,8 @@ const translateDict : {[key:string]:string}= {
   "suggestions.accept": "Accept Suggestions",
   "suggestions.reject_suggestions": "Reject all suggestions.",
   "suggestions.reject": "Reject Suggestions",
+  "alignments.clear_alignments": "Clear all alignments",
+  "alignments.clear": "Clear Alignments",
 }
 
 function translate( key: string ): string{

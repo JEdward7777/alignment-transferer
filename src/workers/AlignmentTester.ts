@@ -6,7 +6,7 @@ import { TTestingWorkerData } from "./WorkerComTypes";
 
 
 
-//TODOj need to make the sending side send the serialized model.
+
 
 self.addEventListener('message', (event: { data: TTestingWorkerData }) => {
 

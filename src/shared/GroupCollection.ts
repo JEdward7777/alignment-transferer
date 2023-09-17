@@ -279,26 +279,10 @@ export default class GroupCollection {
         };
     }
 
-    parseReference(reference: string): { group: string, book: string, chapter: number, verse: number } | null {
-        const regex = /^\[(\w+)\]\s+(\w+)\s+(\d+):(\d+)$/;
+    parseReference(reference: string): { group: string, book: string; chapter: string; verse: string } | null {
+        const regex = /\[(?<group>[^\]]*)\] *(?<book>([0-9]+ ?)?[a-z]+) *(?<chapter>\d+) *: *(?<verse>\d+)/i
         const match = reference.match(regex);
-        
-        if (match) {
-            const [, group, book, chapterStr, verseStr] = match;
-            const chapter = parseInt(chapterStr, 10);
-            const verse = parseInt(verseStr, 10);
-        
-            if (!isNaN(chapter) && !isNaN(verse)) {
-                return {
-                    group,
-                    book,
-                    chapter,
-                    verse,
-                };
-            }
-        }
-        
-        return null; // Return null for invalid references
+        return match?.groups as { group: string; book: string; chapter: string; verse: string } | null;
     }
 
     /**
@@ -325,10 +309,10 @@ export default class GroupCollection {
                 }
                 const bookResult = groupResult[book];
                 if( !(chapter in bookResult) ){
-                    bookResult[chapter] = {};
+                    bookResult[parseInt(chapter)] = {};
                 }
-                const chapterResult = bookResult[chapter];
-                chapterResult[verse] = score;
+                const chapterResult = bookResult[parseInt(chapter)];
+                chapterResult[parseInt(verse)] = score;
             }
         });
 
