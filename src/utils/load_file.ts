@@ -3,7 +3,7 @@
  * @param file - The file to be read.
  * @returns A promise that resolves with the file content as a string, or rejects with an error.
  */
-function readFile(file: Blob): Promise<string> {
+function readTextFile(file: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
@@ -17,7 +17,21 @@ function readFile(file: Blob): Promise<string> {
     });
 }
 
-export function loadFilesFromInputOnChangeTogether( callback: (contents: { [key: string]: string } ) => void ): ((event: React.ChangeEvent<HTMLInputElement>) => void) {
+function readBinaryFile(file: Blob): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            resolve(arrayBuffer);
+        };
+        reader.onerror = () => {
+            reject(reader.error);
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+export function loadTextFilesFromInputOnChangeTogether(callback: (contents: { [key: string]: string }) => void): ((event: React.ChangeEvent<HTMLInputElement>) => void) {
 
 
     const _handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,14 +42,34 @@ export function loadFilesFromInputOnChangeTogether( callback: (contents: { [key:
 
             if (files && files.length > 0) {
                 for (let i = 0; i < files.length; ++i) {
-                    loaded_contents[files[i].name] = await readFile(files[i])
+                    loaded_contents[files[i].name] = await readTextFile(files[i])
                 }
             }
-            
+
             // Clear the input field
             event.target.value = '';
 
-            callback( loaded_contents );
+            callback(loaded_contents);
+        })();
+    };
+
+    return _handleFileChange;
+}
+
+export function loadBinaryFileFromInputOnChange(callback: (contents: ArrayBuffer | null) => void): ((event: React.ChangeEvent<HTMLInputElement>) => void) {
+    const _handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        (async () => {
+            let loaded_content: ArrayBuffer | null = null;
+
+            if (files && files.length > 0) {
+                loaded_content = await readBinaryFile(files[0]);
+            }
+
+            // Clear the input field
+            event.target.value = '';
+
+            callback(loaded_content);
         })();
     };
 

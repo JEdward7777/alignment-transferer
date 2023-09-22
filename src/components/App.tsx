@@ -59,27 +59,18 @@ function translate( key: string ): string{
   return ":-)";
 }
 
-
-const App: React.FC = () => {
-  const dbStorageRef = useRef<IndexedDBStorage | null>(null);
-
-
-  const [state, _setState] = useState<AppState>({
+function defaultAppState(): AppState{
+  return {
     groupCollection: new GroupCollection({}, 0),
     scope: "Book",
     currentSelection: [],
     doubleClickedVerse: null,
     alignerStatus: null,
-  });
-  //also hold the state in a ref so that callbacks can get the up-to-date information.
-  //https://stackoverflow.com/a/60643670
-  const stateRef = useRef<AppState>(state);
-  function setState( newState: AppState ) {
-    stateRef.current = newState;
-    _setState( newState );
   }
+}
 
-  const [trainingState, _setTrainingState] = useState<TrainingState>({
+function defaultTrainingState(): TrainingState{
+  return {
     isTrainingEnabled: false,
     isTestingEnabled: false,
     trainingStatusOutput: "",
@@ -88,7 +79,24 @@ const App: React.FC = () => {
     lastTestAlignedCount: -1,
     currentTestingInstanceCount: -1,
     testResults: null,
-  })
+  }
+}
+
+
+const App: React.FC = () => {
+  const dbStorageRef = useRef<IndexedDBStorage | null>(null);
+
+
+  const [state, _setState] = useState<AppState>(defaultAppState());
+  //also hold the state in a ref so that callbacks can get the up-to-date information.
+  //https://stackoverflow.com/a/60643670
+  const stateRef = useRef<AppState>(state);
+  function setState( newState: AppState ) {
+    stateRef.current = newState;
+    _setState( newState );
+  }
+
+  const [trainingState, _setTrainingState] = useState<TrainingState>(defaultTrainingState())
   const trainingStateRef = useRef<TrainingState>(trainingState);
   function setTrainingState( newState: TrainingState ) {
     trainingStateRef.current = newState;
@@ -103,7 +111,7 @@ const App: React.FC = () => {
 
   const alignmentPredictor = useRef< AbstractWordMapWrapper | null >( null );
 
-  //here we load from local storage.
+  //here we load from "local storage".
   useEffect(() => {
     (async () => {
       const dbStorage = new IndexedDBStorage( 'app-state', 'dataStore' );
@@ -149,7 +157,7 @@ const App: React.FC = () => {
   },[]);
 
 
-  //Handle saving state to localStorage.
+  //Handle saving state to "localStorage".
   useEffect(() => {
     (async () => {
       if( dbStorageRef.current == null ) return;
@@ -177,6 +185,91 @@ const App: React.FC = () => {
       await dbStorageRef.current.setItem("trainingState", JSON.stringify(trainingStateRef.current));
     })();
   },[trainingState]);
+
+  //This handles saving the project out to a zip project file.
+  const onSaveProject = async () => {
+    console.log( "Saving project" );
+
+    //Make the zip filename be the current date
+    const fileName = `${new Date().toISOString()}.at`;
+    const zip = new JSZip();
+
+    if( stateRef.current ){
+      //Now pull the json state from the different things which also go into local storage.
+      const stateJson = JSON.stringify(stateRef.current);
+      //now save it to the zip in a file called "state.json"
+      zip.file("state.json", stateJson);
+    }
+
+    if( alignmentPredictor.current ){
+      const alignmentPredictorJson = JSON.stringify(alignmentPredictor.current?.save());
+      //now save it to the zip in a file called "alignmentPredictor.json"
+      zip.file("alignmentPredictor.json", alignmentPredictorJson);
+    }
+
+    if( trainingStateRef.current ){
+      const trainingStateJson = JSON.stringify(trainingStateRef.current);
+      //now save it to the zip in a file called "trainingState.json"
+      zip.file("trainingState.json", trainingStateJson);
+    }
+
+    //now call the generateAsync
+    const zipFile = await zip.generateAsync({type:"blob"});
+
+    // Check if the browser supports the `saveAs` function
+    if (typeof (window.navigator as any).msSaveBlob !== "undefined") {
+      // For IE and Edge browsers
+      (window.navigator as any).msSaveBlob(zipFile, fileName);
+    } else {
+      // For other browsers
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(zipFile);
+      link.download = fileName;
+      link.click();
+    } 
+  }
+
+  const loadProjectCallback = async ( contents: ArrayBuffer | null ) => {
+    try{
+      //if the contents are null fuss with a popup and bail out.
+      if( contents === null ){
+        await showMessage( "Unable to load project" );
+        return;
+      }
+
+      const zip = new JSZip();
+      await zip.loadAsync(contents);
+      const stateJsonFile = zip.file("state.json");
+      const stateJson = stateJsonFile ? await stateJsonFile.async("string") : null;
+      const stateDict = stateJson !== null ? JSON.parse(stateJson) : null;
+      const newGroupCollection = stateDict === null ? null : ( "groupCollection" in stateDict ) ? GroupCollection.load(stateDict.groupCollection) : new GroupCollection({}, 0);
+      const newState = (newGroupCollection === null ) ? defaultAppState() : {
+        ...stateDict,
+        groupCollection: newGroupCollection,
+      }
+
+      const alignmentPredictorJsonFile = zip.file("alignmentPredictor.json");
+      const alignmentPredictorJson = alignmentPredictorJsonFile ? await alignmentPredictorJsonFile.async("string") : null;
+      const alignmentPredictorDict = alignmentPredictorJson !== null ? JSON.parse(alignmentPredictorJson) : null;
+      const alignmentPredictorLoaded = alignmentPredictorDict !== null ? AbstractWordMapWrapper.load(alignmentPredictorDict) : null;
+
+      const trainingStateJsonFile = zip.file("trainingState.json");
+      const trainingStateJson = trainingStateJsonFile ? await trainingStateJsonFile.async("string") : null;
+      const trainingState = trainingStateJson !== null ? JSON.parse(trainingStateJson) : defaultTrainingState();
+
+      //check if the model isn't loaded for some reason and reset the trained count so that the trainer will know to train.
+      if( alignmentPredictorLoaded === null ) trainingState.lastTrainedInstanceCount = -1;
+      
+
+      setState( newState );
+      setTrainingState( trainingState );
+      alignmentPredictor.current = alignmentPredictorLoaded;
+    } catch( error ){
+      //user declined
+      console.log( `error importing ${error}` );
+      await showMessage( `Error ${error}`)
+    }
+  }
 
 
   const setGroupCollection = (newGroupCollection: GroupCollection ) => {
@@ -742,6 +835,8 @@ const App: React.FC = () => {
             onSaveSelectedFiles={onSaveSelectedFiles} 
             onRemoveSelectedResources={onRemoveSelectedResources}
             onRenameSelectedGroups={onRenameSelectedGroups} 
+            onSaveProject={onSaveProject}
+            loadProjectCallback={loadProjectCallback}
             />
             <TrainingMenu 
             isTrainingEnabled={trainingState.isTrainingEnabled} 

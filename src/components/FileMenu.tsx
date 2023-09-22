@@ -1,16 +1,18 @@
 // FileMenu.tsx
 import React from 'react';
-import { loadFilesFromInputOnChangeTogether } from '../utils/load_file';
+import { loadTextFilesFromInputOnChangeTogether, loadBinaryFileFromInputOnChange } from '../utils/load_file';
 
 interface FileMenuProps {
   onAddTargetResource: (contents: { [key: string]: string } ) => void;
   onAddSourceResource: (contents: { [key: string]: string } ) => void;
   onSaveSelectedFiles: () => void;
+  onSaveProject: () => void;
+  loadProjectCallback: (contents: ArrayBuffer | null ) => void;
   onRemoveSelectedResources: () => void;
   onRenameSelectedGroups: () => void;
 }
 
-const FileMenu: React.FC<FileMenuProps> = ({ onAddTargetResource, onAddSourceResource, onSaveSelectedFiles, onRemoveSelectedResources, onRenameSelectedGroups }) => {
+const FileMenu: React.FC<FileMenuProps> = ({ onAddTargetResource, onAddSourceResource, onSaveSelectedFiles, onSaveProject, loadProjectCallback, onRemoveSelectedResources, onRenameSelectedGroups }) => {
 
 
   return (
@@ -22,13 +24,13 @@ const FileMenu: React.FC<FileMenuProps> = ({ onAddTargetResource, onAddSourceRes
         <li>
           <label htmlFor="file-input" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
             Add Target Resource
-            <input type="file" onChange={loadFilesFromInputOnChangeTogether(onAddTargetResource)} accept=".usfm" className="hidden" id="file-input" multiple />
+            <input type="file" onChange={loadTextFilesFromInputOnChangeTogether(onAddTargetResource)} accept=".usfm" className="hidden" id="file-input" multiple />
           </label>
         </li>
         <li>
           <label htmlFor="source-file-input" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
             Add Source To Selected
-            <input type="file" onChange={loadFilesFromInputOnChangeTogether(onAddSourceResource)} accept=".usfm" className="hidden" id="source-file-input" multiple />
+            <input type="file" onChange={loadTextFilesFromInputOnChangeTogether(onAddSourceResource)} accept=".usfm" className="hidden" id="source-file-input" multiple />
           </label>
         </li>
         <li>
@@ -45,6 +47,17 @@ const FileMenu: React.FC<FileMenuProps> = ({ onAddTargetResource, onAddSourceRes
           <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={onRenameSelectedGroups}>
             Rename Selected Groups
           </a>
+        </li>
+        <li>
+          <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100" onClick={onSaveProject}>
+            Save Project
+          </a>
+        </li>
+        <li>
+          <label htmlFor="project-file-input" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer">
+            Load Project
+            <input type="file" onChange={loadBinaryFileFromInputOnChange(loadProjectCallback)} accept=".at" className="hidden" id="project-file-input" />
+          </label>
         </li>
       </ul>
     </li>
