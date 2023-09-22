@@ -12,7 +12,7 @@ import JSZip from "jszip";
 // @ts-ignore
 import usfm from 'usfm-js';
 import { TAlignerStatus, TState, TWordAlignerAlignmentResult, WordAlignerDialog } from './WordAlignerDialog';
-import { TSourceTargetAlignment, TSourceTargetSuggestion, TUsfmBook, TWord } from 'word-aligner-rcl';
+import { TSourceTargetAlignment, TSourceTargetSuggestion, TUsfmBook, TWord } from 'suggesting-word-aligner-rcl';
 import { isProvidedResourceSelected, isProvidedResourcePartiallySelected } from '@/utils/misc';
 import { AbstractWordMapWrapper } from 'wordmapbooster/dist/boostwordmap_tools';
 import IndexedDBStorage from '@/shared/IndexedDBStorage';

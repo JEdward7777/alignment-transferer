@@ -2,7 +2,7 @@ import { is_number, parseUsfmHeaders } from "@/utils/usfm_misc";
 import Book, { TBookTestResults } from "./Book";
 import Verse from "./Verse";
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
-import { TSourceTargetAlignment, TUsfmBook, TUsfmChapter, TWord } from "word-aligner-rcl";
+import { TSourceTargetAlignment, TUsfmBook, TUsfmChapter, TWord } from "suggesting-word-aligner-rcl";
 import JSZip from "jszip";
 import { TTrainingAndTestingData } from "@/workers/WorkerComTypes";
 

@@ -1,7 +1,7 @@
 import { TState, TWordAlignerAlignmentResult } from "@/components/WordAlignerDialog";
 import { mergeInAlignments, parseUsfmToWordAlignerData_JSON, verseObjectsToTargetString, verseObjectsToTWordTokens, extractAlignmentsFromTargetVerse_JSON } from "@/utils/usfm_misc";
 import { TWordAlignmentTestScore } from "@/workers/WorkerComTypes";
-import { AlignmentHelpers, TUsfmVerse, TSourceTargetAlignment, TWord } from "word-aligner-rcl";
+import { AlignmentHelpers, TUsfmVerse, TSourceTargetAlignment, TWord } from "suggesting-word-aligner-rcl";
 
 export enum VerseState {
     NoSource = "no-source",

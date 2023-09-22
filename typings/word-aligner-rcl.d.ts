@@ -1,4 +1,4 @@
-declare module 'word-aligner-rcl'{
+declare module 'suggesting-word-aligner-rcl'{
     interface TWord{
         type: string;
 
@@ -108,9 +108,9 @@ declare module 'word-aligner-rcl'{
     }
 }
 
-declare module 'word-aligner-rcl/dist/utils/alignmentHelpers';
+declare module 'suggesting-word-aligner-rcl/dist/utils/alignmentHelpers';
 
-declare module 'word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';
+declare module 'suggesting-word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';
 
 
-// declare module 'word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';
+// declare module 'suggesting-word-aligner-rcl/dist/utils/migrateOriginalLanguageHelpers';

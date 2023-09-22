@@ -1,4 +1,4 @@
-import { TSourceTargetAlignment, TWord } from "word-aligner-rcl";
+import { TSourceTargetAlignment, TWord } from "suggesting-word-aligner-rcl";
 
 
 export interface TTrainingAndTestingData {
