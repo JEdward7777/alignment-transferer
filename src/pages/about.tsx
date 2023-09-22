@@ -16,6 +16,13 @@ const AboutPage: React.FC = () => {
         <p className="text-gray-700">
           AlignmentTransferer is an application designed to facilitate working with word alignments between source and target scripture. It was developed by Missions Mutual to assist with the alignment process and improve translation workflows.
         </p>
+        <p className="text-gray-700 mt-5">
+          The source code for AlignmentTransferer is available on{' '}
+          <a className="text-blue-500" href="https://github.com/JEdward7777/alignment-transferer" target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+          .
+        </p>
         <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onClick={handleGoBack}>
           OK
         </button>
