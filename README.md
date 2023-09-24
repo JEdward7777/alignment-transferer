@@ -3,14 +3,16 @@ Alignment Transferer is a react app which demos using [wordmapbooster](https://g
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+Install dependencies with npm using --legacy-peer-deps
+
+```bash
+npm i --legacy-peer-deps
+```
+
 The dev server can be started with 
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
 The server then shows up at [http://localhost:3003](http://localhost:3003)
